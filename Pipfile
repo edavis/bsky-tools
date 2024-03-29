@@ -9,6 +9,7 @@ redis = "*"
 websockets = "*"
 atproto = "*"
 flask = "*"
+requests = "*"
 
 [dev-packages]
 
