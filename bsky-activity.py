@@ -29,8 +29,10 @@ def main():
     redis_pipe = redis_cnx.pipeline()
     redis_sub = redis_cnx.pubsub(ignore_subscribe_messages=True)
 
-    db_fname = '/opt/muninsky/users.db'
-    db_fname = 'users.db'
+    if os.path.exists('/opt/muninsky/users.db'):
+        db_fname = '/opt/muninsky/users.db'
+    else:
+        db_fname = 'users.db'
 
     db_cnx = sqlite3.connect(db_fname)
     with db_cnx:
