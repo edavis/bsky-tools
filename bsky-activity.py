@@ -45,7 +45,7 @@ def main():
     sys.stdout.flush()
 
     op_count = 0
-    for commit, op in subscribe_commits(redis_cnx, parse_car_blocks=False):
+    for commit, op in subscribe_commits(redis_cnx):
         if op['action'] != 'create':
             continue
 
