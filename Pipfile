@@ -4,6 +4,10 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+dag-cbor = "*"
+redis = "*"
+websockets = "*"
+atproto = "*"
 
 [dev-packages]
 
