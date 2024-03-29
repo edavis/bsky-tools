@@ -65,7 +65,7 @@ def main():
             .incr('dev.edavis.muninsky.ops')
 
         op_count += 1
-        if op_count % 1000 == 0:
+        if op_count % 500 == 0:
             payload_seq = commit['seq']
             payload_time = datetime.strptime(commit['time'], '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=timezone.utc)
             payload_lag = now - payload_time
