@@ -23,7 +23,7 @@ async def main():
         while True:
             message = BytesIO(await firehose.recv())
             header = dag_cbor.decode(message, allow_concat=True)
-            if header['op'] != 1 or header['t'] == '#info':
+            if header['op'] != 1:
                 continue
 
             redis_cnx.publish('bsky-tools:firehose:stream', message.getvalue())
