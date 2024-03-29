@@ -8,6 +8,7 @@ dag-cbor = "*"
 redis = "*"
 websockets = "*"
 atproto = "*"
+flask = "*"
 
 [dev-packages]
 
