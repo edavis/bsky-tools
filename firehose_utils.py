@@ -3,7 +3,7 @@ import redis
 from atproto import CAR
 from io import BytesIO
 
-def subscribe_commits(redis_cnx=None):
+def subscribe_commits(redis_cnx=None, parse_car_blocks=False):
     if redis_cnx is None:
         redis_cnx = redis.Redis()
     redis_sub = redis_cnx.pubsub(ignore_subscribe_messages=True)
@@ -22,7 +22,8 @@ def subscribe_commits(redis_cnx=None):
 
         # TODO(ejd): figure out how to validate blocks
         blocks = payload.pop('blocks')
-        car_parsed = CAR.from_bytes(blocks)
+        if parse_car_blocks:
+            car_parsed = CAR.from_bytes(blocks)
 
         message = payload.copy()
         del message['ops']
@@ -32,5 +33,6 @@ def subscribe_commits(redis_cnx=None):
             op = commit_op.copy()
             if op['cid'] is not None:
                 op['cid'] = op['cid'].encode('base32')
-                op['record'] = car_parsed.blocks[op['cid']]
+                if parse_car_blocks:
+                    op['record'] = car_parsed.blocks[op['cid']]
             yield message, op
