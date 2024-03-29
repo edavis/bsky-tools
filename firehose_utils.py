@@ -3,8 +3,9 @@ import redis
 from atproto import CAR
 from io import BytesIO
 
-def subscribe_commits():
-    redis_cnx = redis.Redis()
+def subscribe_commits(redis_cnx=None):
+    if redis_cnx is None:
+        redis_cnx = redis.Redis()
     redis_sub = redis_cnx.pubsub(ignore_subscribe_messages=True)
     redis_sub.subscribe('bsky-tools:firehose:stream')
 
