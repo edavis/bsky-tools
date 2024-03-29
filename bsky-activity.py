@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
-import dag_cbor
 import os
 import redis
 import sqlite3
 import sys
 from datetime import datetime, timezone
-from firehose_utils import commit_ops
-from io import BytesIO
+from firehose_utils import subscribe_commits
 
 app_bsky_allowlist = set([
     'app.bsky.actor.profile',
@@ -27,7 +25,6 @@ app_bsky_allowlist = set([
 def main():
     redis_cnx = redis.Redis()
     redis_pipe = redis_cnx.pipeline()
-    redis_sub = redis_cnx.pubsub(ignore_subscribe_messages=True)
 
     if os.path.exists('/opt/muninsky/users.db'):
         db_fname = '/opt/muninsky/users.db'
@@ -44,46 +41,40 @@ def main():
         CREATE INDEX IF NOT EXISTS ts_idx on users(ts);
         """)
 
+    sys.stdout.write('starting up\n')
+    sys.stdout.flush()
+
     op_count = 0
-    redis_sub.subscribe('bsky-tools:firehose:stream')
-    for event in redis_sub.listen():
-        frame = BytesIO(event['data'])
-        header = dag_cbor.decode(frame, allow_concat=True)
-        if header['op'] != 1 or header['t'] != '#commit':
+    for commit, op in subscribe_commits():
+        if op['action'] != 'create':
             continue
 
-        payload = dag_cbor.decode(frame)
-        if payload['tooBig']:
-            # TODO(ejd): how handle these?
+        collection, _ = op['path'].split('/')
+        if collection not in app_bsky_allowlist:
             continue
 
-        for op in commit_ops(payload):
-            if op['action'] != 'create':
-                continue
+        repo_did = commit['repo']
+        now = datetime.now(timezone.utc)
+        db_cnx.execute(
+            'insert into users values (:did, :ts) on conflict (did) do update set ts = :ts',
+            {'did': repo_did, 'ts': now.timestamp()}
+        )
 
-            collection, _ = op['path'].split('/')
-            if collection not in app_bsky_allowlist:
-                continue
+        redis_pipe \
+            .incr(collection) \
+            .incr('dev.edavis.muninsky.ops')
 
-            repo_did = payload['repo']
-            ts = datetime.now(timezone.utc).timestamp()
-            db_cnx.execute(
-                'insert into users values (:did, :ts) on conflict (did) do update set ts = :ts',
-                {'did': repo_did, 'ts': ts}
-            )
+        op_count += 1
+        if op_count % 1000 == 0:
+            payload_seq = commit['seq']
+            payload_time = datetime.strptime(commit['time'], '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=timezone.utc)
+            payload_lag = now - payload_time
 
-            redis_pipe \
-                .incr(collection) \
-                .incr('dev.edavis.muninsky.ops')
-
-            op_count += 1
-            if op_count % 500 == 0:
-                payload_seq = payload['seq']
-                sys.stdout.write(f'checkpoint: seq: {payload_seq}\n')
-                redis_pipe.set('dev.edavis.muninsky.seq', payload_seq)
-                redis_pipe.execute()
-                db_cnx.commit()
-                sys.stdout.flush()
+            sys.stdout.write(f'seq: {payload_seq}, lag: {payload_lag.total_seconds()}\n')
+            redis_pipe.set('dev.edavis.muninsky.seq', payload_seq)
+            redis_pipe.execute()
+            db_cnx.commit()
+            sys.stdout.flush()
 
 if __name__ == '__main__':
     main()
