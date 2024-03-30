@@ -55,10 +55,10 @@ async def main():
             continue
 
         repo_did = commit['repo']
-        now = datetime.now(timezone.utc)
+        repo_update_time = datetime.strptime(commit['time'], '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=timezone.utc)
         db_cnx.execute(
             'insert into users values (:did, :ts) on conflict (did) do update set ts = :ts',
-            {'did': repo_did, 'ts': now.timestamp()}
+            {'did': repo_did, 'ts': repo_update_time.timestamp()}
         )
 
         redis_pipe \
@@ -67,9 +67,9 @@ async def main():
 
         op_count += 1
         if op_count % 500 == 0:
+            now = datetime.now(timezone.utc)
             payload_seq = commit['seq']
-            payload_time = datetime.strptime(commit['time'], '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=timezone.utc)
-            payload_lag = now - payload_time
+            payload_lag = now - repo_update_time
 
             sys.stdout.write(f'seq: {payload_seq}, lag: {payload_lag.total_seconds()}\n')
             redis_pipe.set('dev.edavis.muninsky.seq', payload_seq)
