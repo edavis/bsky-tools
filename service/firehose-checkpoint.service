@@ -1,0 +1,16 @@
+[Unit]
+Description=Bsky Firehose Checkpoint
+After=network.target syslog.target
+
+[Service]
+Type=simple
+User=eric
+WorkingDirectory=/home/eric/bsky-tools
+ExecStart=/home/eric/.local/bin/pipenv run ./firehose-checkpoint.py
+TimeoutSec=15
+Restart=on-failure
+RestartSec=1
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -5,7 +5,7 @@ from atproto import CAR
 from io import BytesIO
 
 async def subscribe_commits():
-    relay_url = 'ws://localhost:9060'
+    relay_url = 'ws://127.0.0.1:9060'
     sys.stdout.write(f'opening websocket connection to {relay_url}\n')
     sys.stdout.flush()
 
