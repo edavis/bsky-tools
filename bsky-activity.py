@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import asyncio
 import os
 import redis
 import sqlite3
@@ -22,7 +23,7 @@ app_bsky_allowlist = set([
     'app.bsky.labeler.service',
 ])
 
-def main():
+async def main():
     redis_cnx = redis.Redis()
     redis_pipe = redis_cnx.pipeline()
 
@@ -45,7 +46,7 @@ def main():
     sys.stdout.flush()
 
     op_count = 0
-    for commit, op in subscribe_commits(redis_cnx):
+    async for commit, op in subscribe_commits():
         if op['action'] != 'create':
             continue
 
@@ -77,4 +78,4 @@ def main():
             sys.stdout.flush()
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
