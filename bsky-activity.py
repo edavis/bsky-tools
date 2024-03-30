@@ -6,7 +6,7 @@ import redis
 import sqlite3
 import sys
 from datetime import datetime, timezone
-from firehose_utils import subscribe_commits
+from firehose_utils import subscribe_commits, bsky_activity
 
 app_bsky_allowlist = set([
     'app.bsky.actor.profile',
@@ -46,7 +46,7 @@ async def main():
     sys.stdout.flush()
 
     op_count = 0
-    async for commit, op in subscribe_commits():
+    async for commit, op in bsky_activity():
         if op['action'] != 'create':
             continue
 
