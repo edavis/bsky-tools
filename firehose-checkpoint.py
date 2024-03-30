@@ -34,7 +34,8 @@ async def main():
 
                 redis_cnx.set('bsky-tools:firehose:subscribe-repos:seq', payload_seq)
                 sys.stdout.write(f'seq: {payload_seq}, lag: {payload_lag.total_seconds()}\n')
-                sys.stdout.flush()
+
+            sys.stdout.flush()
 
 if __name__ == '__main__':
     asyncio.run(main())
