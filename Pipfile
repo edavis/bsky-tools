@@ -10,6 +10,7 @@ websockets = "*"
 atproto = "*"
 flask = "*"
 requests = "*"
+gunicorn = "*"
 
 [dev-packages]
 
