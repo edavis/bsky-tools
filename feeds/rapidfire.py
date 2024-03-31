@@ -57,4 +57,4 @@ class RapidFireFeed:
         feed = [dict(post=uri) for (uri,) in cur]
         offset += len(feed)
 
-        return dict(offset=str(offset), feed=feed)
+        return dict(cursor=str(offset), feed=feed)
