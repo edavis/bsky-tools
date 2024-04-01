@@ -2,8 +2,8 @@
 
 from feeds import Manager
 from feeds.rapidfire import RapidFireFeed
-
 from flask import Flask, request
+
 app = Flask(__name__)
 
 @app.route('/.well-known/did.json')
@@ -35,8 +35,10 @@ def get_feed_skeleton():
         offset = 0
 
     feed_uri = request.args['feed']
-    return manager.serve(feed_uri, limit, offset)
+    posts = manager.serve(feed_uri, limit, offset)
+    offset += len(posts)
 
+    return dict(cursor=str(offset), feeds=[dict(post=uri) for uri in posts])
 
 if __name__ == '__main__':
     app.run(debug=True)

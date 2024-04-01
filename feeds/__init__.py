@@ -1,18 +1,15 @@
 class Manager:
     def __init__(self):
-        self.feeds = []
-        self.webs = {}
+        self.feeds = {}
 
     def register(self, feed):
-        f = feed()
-        self.webs[feed.FEED_URI] = f
-        self.feeds.append(f)
+        self.feeds[feed.FEED_URI] = feed()
 
     def process(self, commit):
-        for feed in self.feeds:
+        for _, feed in self.feeds.items():
             feed.process(commit)
 
     def serve(self, feed_uri, limit, offset):
-        feed = self.webs.get(feed_uri)
+        feed = self.feeds.get(feed_uri)
         if feed is not None:
             return feed.serve(limit, offset)

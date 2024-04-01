@@ -53,8 +53,4 @@ class RapidFireFeed:
             "select uri from posts order by create_ts desc limit :limit offset :offset",
             dict(limit=limit, offset=offset)
         )
-
-        feed = [dict(post=uri) for (uri,) in cur]
-        offset += len(feed)
-
-        return dict(cursor=str(offset), feed=feed)
+        return [uri for (uri,) in cur]

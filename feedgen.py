@@ -58,6 +58,5 @@ async def main():
     async for commit in firehose_events():
         manager.process(commit)
 
-
 if __name__ == '__main__':
     asyncio.run(main())
