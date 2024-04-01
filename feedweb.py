@@ -2,6 +2,7 @@
 
 from feeds import Manager
 from feeds.rapidfire import RapidFireFeed
+from feeds.popular import PopularFeed
 from flask import Flask, request
 
 app = Flask(__name__)
@@ -23,6 +24,7 @@ def well_known_did():
 def get_feed_skeleton():
     manager = Manager()
     manager.register(RapidFireFeed)
+    manager.register(PopularFeed)
 
     try:
         limit = int(request.args.get('limit', 50))
