@@ -6,15 +6,14 @@ class RapidFireFeed:
     FEED_URI = 'at://did:plc:4nsduwlpivpuur4mqkbfvm6a/app.bsky.feed.generator/rapidfire'
 
     def __init__(self):
-        self.checkpoint = 0
-        self.db_cnx = sqlite3.connect('db/rapidfire.db')
+        self.db_cnx = sqlite3.connect('/dev/shm/feedgens/rapidfire.db')
         with self.db_cnx:
-            self.db_cnx.executescript("""
-            pragma journal_mode = WAL;
-            pragma synchronous = off;
-            create table if not exists posts (uri text, create_ts timestamp);
-            create index if not exists create_ts_idx on posts(create_ts);
-            """)
+            self.db_cnx.executescript(
+                "pragma journal_mode = WAL;"
+                "pragma synchronous = OFF;"
+                "create table if not exists posts (uri text, create_ts timestamp);"
+                "create index if not exists create_ts_idx on posts(create_ts);"
+            )
 
     def process(self, commit):
         op = commit['op']
@@ -38,15 +37,15 @@ class RapidFireFeed:
             repo = commit['repo']
             path = op['path']
             post_uri = f'at://{repo}/{path}'
-            self.db_cnx.execute(
-                'insert into posts (uri, create_ts) values (:uri, :ts)',
-                dict(uri=post_uri, ts=ts)
-            )
 
-            self.checkpoint += 1
-            if self.checkpoint % 10 == 0:
-                self.db_cnx.execute("delete from posts where strftime('%s', create_ts) < strftime('%s', 'now', '-1 hour')")
-                self.db_cnx.commit()
+            with self.db_cnx:
+                self.db_cnx.execute(
+                    'insert into posts (uri, create_ts) values (:uri, :ts)',
+                    dict(uri=post_uri, ts=ts)
+                )
+                self.db_cnx.execute(
+                    "delete from posts where strftime('%s', create_ts) < strftime('%s', 'now', '-15 minutes')"
+                )
 
     def serve(self, limit, offset):
         cur = self.db_cnx.execute(
