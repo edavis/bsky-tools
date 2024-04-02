@@ -6,7 +6,7 @@ class Manager:
         self.feeds[feed.FEED_URI] = feed()
 
     def process(self, commit):
-        for _, feed in self.feeds.items():
+        for feed in self.feeds.values():
             feed.process(commit)
 
     def serve(self, feed_uri, limit, offset):
