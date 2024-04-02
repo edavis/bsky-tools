@@ -62,7 +62,8 @@ class RapidFireFeed:
             lang_values = list(langs.values())
             lang_selects = ['select uri, create_ts from posts where lang = ?'] * len(lang_values)
             lang_clause = ' union '.join(lang_selects)
-            cur = self.db_cnx.execute((
-                lang_clause + ' order by create_ts desc limit ? offset ?'
-            ), [*lang_values, limit, offset])
+            cur = self.db_cnx.execute(
+                lang_clause + ' order by create_ts desc limit ? offset ?',
+                [*lang_values, limit, offset]
+            )
             return [uri for (uri, create_ts) in cur]
