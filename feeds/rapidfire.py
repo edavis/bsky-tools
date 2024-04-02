@@ -27,7 +27,7 @@ class RapidFireFeed:
         ts = commit['time']
         record = op['record']
 
-        if not record['langs']:
+        if not record.get('langs'):
             return
 
         if all([
