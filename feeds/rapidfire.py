@@ -32,7 +32,6 @@ class RapidFireFeed:
 
         if all([
             len(record['text']) <= MAX_TEXT_LENGTH,
-            all(0x20 <= ord(c) <= 0x7e for c in record['text']),
             record.get('reply') is None,
             record.get('embed') is None,
             record.get('facets') is None
