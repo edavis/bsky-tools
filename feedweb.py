@@ -42,7 +42,8 @@ def get_feed_skeleton():
         offset = 0
 
     feed_uri = request.args['feed']
-    posts = manager.serve(feed_uri, limit, offset)
+    langs = request.accept_languages
+    posts = manager.serve(feed_uri, limit, offset, langs)
     offset += len(posts)
 
     return dict(cursor=str(offset), feed=[dict(post=uri) for uri in posts])

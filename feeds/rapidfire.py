@@ -51,9 +51,18 @@ class RapidFireFeed:
                     "delete from posts where strftime('%s', create_ts) < strftime('%s', 'now', '-15 minutes')"
                 )
 
-    def serve(self, limit, offset):
-        cur = self.db_cnx.execute(
-            "select uri from posts order by create_ts desc limit :limit offset :offset",
-            dict(limit=limit, offset=offset)
-        )
-        return [uri for (uri,) in cur]
+    def serve(self, limit, offset, langs):
+        if '*' in langs:
+            cur = self.db_cnx.execute(
+                "select uri from posts order by create_ts desc limit :limit offset :offset",
+                dict(limit=limit, offset=offset)
+            )
+            return [uri for (uri,) in cur]
+        else:
+            lang_values = list(langs.values())
+            lang_selects = ['select uri, create_ts from posts where lang = ?'] * len(lang_values)
+            lang_clause = ' union '.join(lang_selects)
+            cur = self.db_cnx.execute((
+                lang_clause + ' order by create_ts desc limit ? offset ?'
+            ), [*lang_values, limit, offset])
+            return [uri for (uri, create_ts) in cur]

@@ -9,7 +9,7 @@ class Manager:
         for feed in self.feeds.values():
             feed.process(commit)
 
-    def serve(self, feed_uri, limit, offset):
+    def serve(self, feed_uri, limit, offset, langs):
         feed = self.feeds.get(feed_uri)
         if feed is not None:
-            return feed.serve(limit, offset)
+            return feed.serve(limit, offset, langs)
