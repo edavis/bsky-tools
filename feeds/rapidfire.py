@@ -24,7 +24,6 @@ class RapidFireFeed:
         if collection != 'app.bsky.feed.post':
             return
 
-        ts = commit['time']
         record = op['record']
 
         if all([
@@ -36,6 +35,7 @@ class RapidFireFeed:
             repo = commit['repo']
             path = op['path']
             post_uri = f'at://{repo}/{path}'
+            ts = record['createdAt']
 
             with self.db_cnx:
                 langs = record.get('langs') or ['']
