@@ -27,9 +27,6 @@ class RapidFireFeed:
         ts = commit['time']
         record = op['record']
 
-        if not record.get('langs'):
-            return
-
         if all([
             len(record['text']) <= MAX_TEXT_LENGTH,
             record.get('reply') is None,
@@ -41,7 +38,8 @@ class RapidFireFeed:
             post_uri = f'at://{repo}/{path}'
 
             with self.db_cnx:
-                for lang in record['langs']:
+                langs = record.get('langs') or ['']
+                for lang in langs:
                     self.db_cnx.execute(
                         'insert into posts (uri, create_ts, lang) values (:uri, :ts, :lang)',
                         dict(uri=post_uri, ts=ts, lang=lang)
