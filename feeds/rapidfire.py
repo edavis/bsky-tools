@@ -11,7 +11,7 @@ class RapidFireFeed:
             self.db_cnx.executescript(
                 "pragma journal_mode = WAL;"
                 "pragma synchronous = OFF;"
-                "create table if not exists posts (uri text, create_ts timestamp);"
+                "create table if not exists posts (uri text, create_ts timestamp, lang text);"
                 "create index if not exists create_ts_idx on posts(create_ts);"
             )
 
@@ -41,10 +41,12 @@ class RapidFireFeed:
             post_uri = f'at://{repo}/{path}'
 
             with self.db_cnx:
-                self.db_cnx.execute(
-                    'insert into posts (uri, create_ts) values (:uri, :ts)',
-                    dict(uri=post_uri, ts=ts)
-                )
+                for lang in record['langs']:
+                    self.db_cnx.execute(
+                        'insert into posts (uri, create_ts, lang) values (:uri, :ts, :lang)',
+                        dict(uri=post_uri, ts=ts, lang=lang)
+                    )
+
                 self.db_cnx.execute(
                     "delete from posts where strftime('%s', create_ts) < strftime('%s', 'now', '-15 minutes')"
                 )
