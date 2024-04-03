@@ -20,6 +20,8 @@ class PopularFeed:
                 "create unique index if not exists uri_idx on posts(uri);"
             )
 
+        self.cleanup_checkpoint = 0
+
     def process(self, commit):
         op = commit['op']
         if op['action'] != 'create':
@@ -39,9 +41,12 @@ class PopularFeed:
                 "on conflict (uri) do update set temperature = temperature + 1, update_ts = :ts"
             ), dict(uri=like_subject_uri, ts=ts))
 
-            self.db_cnx.execute(
-                "delete from posts where temperature = 1 and strftime('%s', create_ts) < strftime('%s', 'now', '-15 minutes')"
-            )
+        self.cleanup_checkpoint += 1
+        if self.cleanup_checkpoint % 1000 == 0:
+            with self.db_cnx:
+                self.db_cnx.execute(
+                    "delete from posts where temperature * exp( -1 * ( ( strftime( '%s', 'now' ) - strftime( '%s', create_ts ) ) / 1800.0 ) ) < 1.0 and strftime( '%s', create_ts ) < strftime( '%s', 'now', '-15 minutes' )"
+                )
 
     def serve(self, limit, offset, langs):
         cur = self.db_cnx.execute((
