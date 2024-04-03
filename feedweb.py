@@ -30,6 +30,7 @@ def internal_server_error(error):
 def get_feed_skeleton():
     manager = Manager()
     manager.register(RapidFireFeed)
+    manager.register(PopularFeed)
 
     try:
         limit = int(request.args.get('limit', 50))

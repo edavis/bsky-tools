@@ -55,6 +55,7 @@ async def firehose_events():
 async def main():
     manager = Manager()
     manager.register(RapidFireFeed)
+    manager.register(PopularFeed)
 
     async for commit in firehose_events():
         manager.process(commit)
