@@ -6,7 +6,7 @@ import redis
 import sqlite3
 import sys
 from datetime import datetime, timezone
-from firehose_utils import subscribe_commits, bsky_activity
+from firehose_utils import bsky_activity
 
 app_bsky_allowlist = set([
     'app.bsky.actor.profile',
