@@ -1,4 +1,5 @@
 import os
+import sys
 import math
 import sqlite3
 
@@ -16,6 +17,7 @@ class PopularFeed:
             self.db_cnx.executescript(
                 "pragma journal_mode = WAL;"
                 "pragma synchronous = OFF;"
+                "pragma wal_autocheckpoint = 0;"
                 "create table if not exists posts (uri text, create_ts timestamp, update_ts timestamp, temperature int);"
                 "create unique index if not exists uri_idx on posts(uri);"
             )
@@ -43,10 +45,17 @@ class PopularFeed:
 
         self.cleanup_checkpoint += 1
         if self.cleanup_checkpoint % 1000 == 0:
+            sys.stdout.write('popular: running cleanup checkpoint\n')
+            sys.stdout.flush()
+
             with self.db_cnx:
                 self.db_cnx.execute(
                     "delete from posts where temperature * exp( -1 * ( ( strftime( '%s', 'now' ) - strftime( '%s', create_ts ) ) / 1800.0 ) ) < 1.0 and strftime( '%s', create_ts ) < strftime( '%s', 'now', '-15 minutes' )"
                 )
+
+            self.db_cnx.execute(
+                "pragma wal_checkpoint(TRUNCATE)"
+            )
 
     def serve(self, limit, offset, langs):
         cur = self.db_cnx.execute((

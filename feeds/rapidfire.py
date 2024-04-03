@@ -1,4 +1,5 @@
 import os
+import sys
 import sqlite3
 
 MAX_TEXT_LENGTH = 140
@@ -15,9 +16,12 @@ class RapidFireFeed:
             self.db_cnx.executescript(
                 "pragma journal_mode = WAL;"
                 "pragma synchronous = OFF;"
+                "pragma wal_autocheckpoint = 0;"
                 "create table if not exists posts (uri text, create_ts timestamp, lang text);"
                 "create index if not exists create_ts_idx on posts(create_ts);"
             )
+
+        self.checkpoint = 0
 
     def process(self, commit):
         op = commit['op']
@@ -40,6 +44,7 @@ class RapidFireFeed:
             path = op['path']
             post_uri = f'at://{repo}/{path}'
             ts = record['createdAt']
+            self.checkpoint += 1
 
             with self.db_cnx:
                 langs = record.get('langs') or ['']
@@ -52,6 +57,11 @@ class RapidFireFeed:
                 self.db_cnx.execute(
                     "delete from posts where strftime('%s', create_ts) < strftime('%s', 'now', '-15 minutes')"
                 )
+
+            if self.checkpoint % 100 == 0:
+                sys.stdout.write('rapidfire: checkpoint\n')
+                sys.stdout.flush()
+                self.db_cnx.execute("pragma wal_checkpoint(TRUNCATE)")
 
     def serve(self, limit, offset, langs):
         if '*' in langs:
