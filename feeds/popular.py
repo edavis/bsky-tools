@@ -1,3 +1,4 @@
+import os
 import math
 import sqlite3
 
@@ -5,7 +6,11 @@ class PopularFeed:
     FEED_URI = 'at://did:plc:4nsduwlpivpuur4mqkbfvm6a/app.bsky.feed.generator/popular'
 
     def __init__(self):
-        self.db_cnx = sqlite3.connect('/dev/shm/feedgens/popular.db')
+        if os.path.isdir('/dev/shm/feedgens/'):
+            self.db_cnx = sqlite3.connect('/dev/shm/feedgens/popular.db')
+        else:
+            self.db_cnx = sqlite3.connect('db/popular.db')
+
         self.db_cnx.create_function('exp', 1, math.exp)
         with self.db_cnx:
             self.db_cnx.executescript(
