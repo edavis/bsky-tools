@@ -7,25 +7,6 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-@app.route('/.well-known/did.json')
-def well_known_did():
-    service = {
-        'id': '#bsky_fg',
-        'type': 'BskyFeedGenerator',
-        'serviceEndpoint': 'https://feedgen.edavis.dev',
-    }
-    return {
-        '@context': ['https://www.w3.org/ns/did/v1'],
-        'id': 'did:web:feedgen.edavis.dev',
-        'service': [service],
-    }
-
-@app.errorhandler(500)
-def internal_server_error(error):
-    post = dict(post='at://did:plc:4nsduwlpivpuur4mqkbfvm6a/app.bsky.feed.post/3kp2glnz4r52z')
-    obj = {'feed': [post]}
-    return jsonify(obj), 500
-
 @app.route('/xrpc/app.bsky.feed.getFeedSkeleton')
 def get_feed_skeleton():
     manager = Manager()
