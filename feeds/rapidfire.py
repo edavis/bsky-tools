@@ -50,7 +50,7 @@ class RapidFireFeed(BaseFeed):
             repo = commit['repo']
             path = op['path']
             post_uri = f'at://{repo}/{path}'
-            ts = record['createdAt']
+            ts = self.safe_timestamp(record['createdAt']).timestamp()
 
             with self.db_cnx:
                 langs = record.get('langs') or ['']
@@ -65,7 +65,7 @@ class RapidFireFeed(BaseFeed):
 
         with self.db_cnx:
             self.db_cnx.execute(
-                "delete from posts where strftime('%s', create_ts) < strftime('%s', 'now', '-15 minutes')"
+                "delete from posts where create_ts < unixepoch('now', '-15 minutes')"
             )
 
         self.db_cnx.pragma('wal_checkpoint(TRUNCATE)')
