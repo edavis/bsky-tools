@@ -2,7 +2,6 @@
 
 import asyncio
 import dag_cbor
-import redis
 import sys
 import websockets
 from atproto import CAR
@@ -12,18 +11,20 @@ from feeds import Manager
 from feeds.rapidfire import RapidFireFeed
 from feeds.popular import PopularFeed
 
+from firehose_utils import FirehoseManager
+
 async def firehose_events():
-    redis_cnx = redis.Redis()
+    firehose_manager = FirehoseManager()
+
     relay_url = 'wss://bsky.network/xrpc/com.atproto.sync.subscribeRepos'
-    firehose_seq = redis_cnx.get('dev.edavis.feedgen.seq')
-    if firehose_seq:
-        relay_url += f'?cursor={firehose_seq.decode()}'
+    seq = firehose_manager.get_sequence_number()
+    if seq:
+        relay_url += f'?cursor={seq}'
 
     sys.stdout.write(f'opening websocket connection to {relay_url}\n')
     sys.stdout.flush()
 
     async with websockets.connect(relay_url, ping_timeout=None) as firehose:
-        op_count = 0
         while True:
             frame = BytesIO(await firehose.recv())
             header = dag_cbor.decode(frame, allow_concat=True)
@@ -47,10 +48,6 @@ async def firehose_events():
                     repo_op['record'] = car_parsed.blocks[repo_op['cid']]
                 message['op'] = repo_op
                 yield message
-
-            op_count += 1
-            if op_count % 500 == 0:
-                redis_cnx.set('dev.edavis.feedgen.seq', payload['seq'])
 
 async def main():
     manager = Manager()
