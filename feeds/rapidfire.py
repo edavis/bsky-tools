@@ -8,10 +8,12 @@ class RapidFireFeed:
     FEED_URI = 'at://did:plc:4nsduwlpivpuur4mqkbfvm6a/app.bsky.feed.generator/rapidfire'
 
     def __init__(self):
-        if os.path.isdir('/dev/shm/feedgens/'):
+        if os.path.isdir('/dev/shm/'):
+            os.makedirs('/dev/shm/feedgens/')
             self.db_cnx = sqlite3.connect('/dev/shm/feedgens/rapidfire.db')
         else:
             self.db_cnx = sqlite3.connect('db/rapidfire.db')
+
         with self.db_cnx:
             self.db_cnx.executescript(
                 "pragma journal_mode = WAL;"
