@@ -9,7 +9,7 @@ class RapidFireFeed:
 
     def __init__(self):
         if os.path.isdir('/dev/shm/'):
-            os.makedirs('/dev/shm/feedgens/')
+            os.makedirs('/dev/shm/feedgens/', exist_ok=True)
             self.db_cnx = sqlite3.connect('/dev/shm/feedgens/rapidfire.db')
         else:
             self.db_cnx = sqlite3.connect('db/rapidfire.db')

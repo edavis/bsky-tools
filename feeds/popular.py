@@ -8,7 +8,7 @@ class PopularFeed:
 
     def __init__(self):
         if os.path.isdir('/dev/shm/'):
-            os.makedirs('/dev/shm/feedgens/')
+            os.makedirs('/dev/shm/feedgens/', exist_ok=True)
             self.db_cnx = sqlite3.connect('/dev/shm/feedgens/popular.db')
         else:
             self.db_cnx = sqlite3.connect('db/popular.db')
