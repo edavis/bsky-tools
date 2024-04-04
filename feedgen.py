@@ -53,7 +53,7 @@ async def main():
 
     feed_manager = FeedManager()
     feed_manager.register(RapidFireFeed)
-    feed_manager.register(PopularFeed)
+    # feed_manager.register(PopularFeed)
 
     current_minute = None
     async for commit in firehose_events(firehose_manager):

@@ -11,7 +11,7 @@ app = Flask(__name__)
 def get_feed_skeleton():
     manager = FeedManager()
     manager.register(RapidFireFeed)
-    manager.register(PopularFeed)
+    # manager.register(PopularFeed)
 
     try:
         limit = int(request.args.get('limit', 50))
