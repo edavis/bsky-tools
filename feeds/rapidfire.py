@@ -2,9 +2,11 @@ import os
 import sys
 import sqlite3
 
+from . import BaseFeed
+
 MAX_TEXT_LENGTH = 140
 
-class RapidFireFeed:
+class RapidFireFeed(BaseFeed):
     FEED_URI = 'at://did:plc:4nsduwlpivpuur4mqkbfvm6a/app.bsky.feed.generator/rapidfire'
 
     def __init__(self):
@@ -25,7 +27,7 @@ class RapidFireFeed:
 
         self.checkpoint = 0
 
-    def process(self, commit):
+    def process_commit(self, commit):
         op = commit['op']
         if op['action'] != 'create':
             return
@@ -65,7 +67,7 @@ class RapidFireFeed:
                 sys.stdout.flush()
                 self.db_cnx.execute("pragma wal_checkpoint(TRUNCATE)")
 
-    def serve(self, limit, offset, langs):
+    def serve_feed(self, limit, offset, langs):
         if '*' in langs:
             cur = self.db_cnx.execute(
                 "select uri from posts order by create_ts desc limit :limit offset :offset",

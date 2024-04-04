@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from feeds import Manager
+from feeds import FeedManager
 from feeds.rapidfire import RapidFireFeed
 from feeds.popular import PopularFeed
 from flask import Flask, request, jsonify
@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 @app.route('/xrpc/app.bsky.feed.getFeedSkeleton')
 def get_feed_skeleton():
-    manager = Manager()
+    manager = FeedManager()
     manager.register(RapidFireFeed)
     manager.register(PopularFeed)
 
@@ -29,7 +29,7 @@ def get_feed_skeleton():
         feed_uri = request.args['feed']
 
     langs = request.accept_languages
-    posts = manager.serve(feed_uri, limit, offset, langs)
+    posts = manager.serve_feed(feed_uri, limit, offset, langs)
     offset += len(posts)
 
     return dict(cursor=str(offset), feed=[dict(post=uri) for uri in posts])

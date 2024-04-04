@@ -4,18 +4,17 @@ import asyncio
 import dag_cbor
 import sys
 import websockets
+
 from atproto import CAR
 from io import BytesIO
+from datetime import datetime, timezone
 
-from feeds import Manager
+from feeds import FeedManager
 from feeds.rapidfire import RapidFireFeed
 from feeds.popular import PopularFeed
+from firehose_manager import FirehoseManager
 
-from firehose_utils import FirehoseManager
-
-async def firehose_events():
-    firehose_manager = FirehoseManager()
-
+async def firehose_events(firehose_manager):
     relay_url = 'wss://bsky.network/xrpc/com.atproto.sync.subscribeRepos'
     seq = firehose_manager.get_sequence_number()
     if seq:
@@ -56,8 +55,15 @@ async def main():
     feed_manager.register(RapidFireFeed)
     feed_manager.register(PopularFeed)
 
-    async for commit in firehose_events():
-        feed_manager.process(commit)
+    current_minute = None
+    async for commit in firehose_events(firehose_manager):
+        feed_manager.process_commit(commit)
+
+        now = datetime.now(timezone.utc)
+        if now.minute != current_minute:
+            current_minute = now.minute
+            feed_manager.run_tasks_minute()
+            firehose_manager.set_sequence_number(commit['seq'])
 
 if __name__ == '__main__':
     asyncio.run(main())
