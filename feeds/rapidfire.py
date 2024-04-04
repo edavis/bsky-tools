@@ -1,6 +1,6 @@
 import os
-import sys
 import apsw
+import logging
 
 from . import BaseFeed
 
@@ -27,6 +27,8 @@ class RapidFireFeed(BaseFeed):
             create table if not exists posts (uri text, create_ts timestamp, lang text);
             create index if not exists create_ts_idx on posts(create_ts);
             """)
+
+        self.logger = logging.getLogger('feeds.rapidfire')
 
     def process_commit(self, commit):
         op = commit['op']
@@ -59,8 +61,7 @@ class RapidFireFeed(BaseFeed):
                     )
 
     def run_tasks_minute(self):
-        sys.stdout.write('rapidfire: running minute tasks\n')
-        sys.stdout.flush()
+        self.logger.debug('running minute tasks')
 
         with self.db_cnx:
             self.db_cnx.execute(

@@ -1,6 +1,5 @@
 import os
-import sys
-import math
+import logging
 import apsw
 
 from . import BaseFeed
@@ -27,6 +26,8 @@ class PopularFeed(BaseFeed):
             create unique index if not exists uri_idx on posts(uri);
             """)
 
+        self.logger = logging.getLogger('feeds.popular')
+
     def process_commit(self, commit):
         op = commit['op']
         if op['action'] != 'create':
@@ -47,8 +48,7 @@ class PopularFeed(BaseFeed):
             ), dict(uri=like_subject_uri, ts=ts))
 
     def run_tasks_minute(self):
-        sys.stdout.write('popular: running minute tasks\n')
-        sys.stdout.flush()
+        self.logger.debug('running minute tasks')
 
         with self.db_cnx:
             self.db_cnx.execute(

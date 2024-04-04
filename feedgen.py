@@ -2,6 +2,7 @@
 
 import asyncio
 import dag_cbor
+import logging
 import sys
 import websockets
 
@@ -13,6 +14,13 @@ from feeds import FeedManager
 from feeds.rapidfire import RapidFireFeed
 from feeds.popular import PopularFeed
 from firehose_manager import FirehoseManager
+
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)-5s - %(name)-20s - %(message)s',
+    level=logging.DEBUG
+)
+logging.getLogger('').setLevel(logging.WARNING)
+logging.getLogger('feeds').setLevel(logging.DEBUG)
 
 async def firehose_events(firehose_manager):
     relay_url = 'wss://bsky.network/xrpc/com.atproto.sync.subscribeRepos'
