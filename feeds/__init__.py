@@ -30,7 +30,7 @@ class BaseFeed:
         for format in formats.values():
             try:
                 ts = datetime.strptime(timestamp, format)
-            except ValueError
+            except ValueError:
                 continue
             else:
                 return ts
