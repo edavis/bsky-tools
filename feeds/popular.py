@@ -1,7 +1,7 @@
 import os
 import sys
 import math
-import sqlite3
+import apsw
 
 from . import BaseFeed
 
@@ -9,23 +9,23 @@ class PopularFeed(BaseFeed):
     FEED_URI = 'at://did:plc:4nsduwlpivpuur4mqkbfvm6a/app.bsky.feed.generator/popular'
 
     def __init__(self):
+        db_fname = ''
         if os.path.isdir('/dev/shm/'):
             os.makedirs('/dev/shm/feedgens/', exist_ok=True)
-            self.db_cnx = sqlite3.connect('/dev/shm/feedgens/popular.db')
+            db_fname = '/dev/shm/feedgens/popular.db'
         else:
-            self.db_cnx = sqlite3.connect('db/popular.db')
+            db_fname = 'db/popular.db'
 
-        self.db_cnx.create_function('exp', 1, math.exp)
+        self.db_cnx = apsw.Connection(db_fname)
+        self.db_cnx.pragma('journal_mode', 'WAL')
+        self.db_cnx.pragma('synchronous', 'OFF')
+        self.db_cnx.pragma('wal_autocheckpoint', '0')
+
         with self.db_cnx:
-            self.db_cnx.executescript(
-                "pragma journal_mode = WAL;"
-                "pragma synchronous = OFF;"
-                "pragma wal_autocheckpoint = 0;"
-                "create table if not exists posts (uri text, create_ts timestamp, update_ts timestamp, temperature int);"
-                "create unique index if not exists uri_idx on posts(uri);"
-            )
-
-        self.cleanup_checkpoint = 0
+            self.db_cnx.execute("""
+            create table if not exists posts (uri text, create_ts timestamp, update_ts timestamp, temperature int);
+            create unique index if not exists uri_idx on posts(uri);
+            """)
 
     def process_commit(self, commit):
         op = commit['op']
@@ -46,19 +46,16 @@ class PopularFeed(BaseFeed):
                 "on conflict (uri) do update set temperature = temperature + 1, update_ts = :ts"
             ), dict(uri=like_subject_uri, ts=ts))
 
-        self.cleanup_checkpoint += 1
-        if self.cleanup_checkpoint % 1000 == 0:
-            sys.stdout.write('popular: running cleanup checkpoint\n')
-            sys.stdout.flush()
+    def run_tasks_minute(self):
+        sys.stdout.write('popular: running minute tasks\n')
+        sys.stdout.flush()
 
-            with self.db_cnx:
-                self.db_cnx.execute(
-                    "delete from posts where temperature * exp( -1 * ( ( strftime( '%s', 'now' ) - strftime( '%s', create_ts ) ) / 1800.0 ) ) < 1.0 and strftime( '%s', create_ts ) < strftime( '%s', 'now', '-15 minutes' )"
-                )
-
+        with self.db_cnx:
             self.db_cnx.execute(
-                "pragma wal_checkpoint(TRUNCATE)"
+                "delete from posts where temperature * exp( -1 * ( ( strftime( '%s', 'now' ) - strftime( '%s', create_ts ) ) / 1800.0 ) ) < 1.0 and strftime( '%s', create_ts ) < strftime( '%s', 'now', '-15 minutes' )"
             )
+
+        self.db_cnx.pragma('wal_checkpoint(TRUNCATE)')
 
     def serve_feed(self, limit, offset, langs):
         cur = self.db_cnx.execute((
