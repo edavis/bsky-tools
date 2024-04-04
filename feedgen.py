@@ -50,12 +50,14 @@ async def firehose_events():
                 yield message
 
 async def main():
-    manager = Manager()
-    manager.register(RapidFireFeed)
-    manager.register(PopularFeed)
+    firehose_manager = FirehoseManager()
+
+    feed_manager = FeedManager()
+    feed_manager.register(RapidFireFeed)
+    feed_manager.register(PopularFeed)
 
     async for commit in firehose_events():
-        manager.process(commit)
+        feed_manager.process(commit)
 
 if __name__ == '__main__':
     asyncio.run(main())

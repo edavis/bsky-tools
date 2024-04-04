@@ -1,4 +1,4 @@
-class Manager:
+class FeedManager:
     def __init__(self):
         self.feeds = {}
 
