@@ -12,6 +12,8 @@ class RapidFireFeed(BaseFeed):
     FEED_URI = 'at://did:plc:4nsduwlpivpuur4mqkbfvm6a/app.bsky.feed.generator/rapidfire'
 
     def __init__(self):
+        super().__init__()
+
         db_fname = ''
         if os.path.isdir('/dev/shm/'):
             os.makedirs('/dev/shm/feedgens/', exist_ok=True)
@@ -54,6 +56,8 @@ class RapidFireFeed(BaseFeed):
             post_uri = f'at://{repo}/{path}'
             ts = self.safe_timestamp(record['createdAt']).timestamp()
 
+            self.transaction_begin(self.db_cnx)
+
             langs = record.get('langs') or ['']
             for lang in langs:
                 self.db_cnx.execute(
@@ -61,15 +65,16 @@ class RapidFireFeed(BaseFeed):
                     dict(uri=post_uri, ts=ts, lang=lang)
                 )
 
-    def run_tasks_minute(self):
-        self.logger.debug('running minute tasks')
+    def delete_old_posts(self):
+        self.db_cnx.execute(
+            "delete from posts where create_ts < unixepoch('now', '-15 minutes')"
+        )
 
-        with self.db_cnx:
-            self.db_cnx.execute(
-                "delete from posts where create_ts < unixepoch('now', '-15 minutes')"
-            )
-
-        self.db_cnx.pragma('wal_checkpoint(TRUNCATE)')
+    def commit_changes(self):
+        self.logger.debug('comitting changes')
+        self.delete_old_posts()
+        self.transaction_commit(self.db_cnx)
+        self.wal_checkpoint(self.db_cnx, 'RESTART')
 
     def serve_feed(self, limit, offset, langs):
         if '*' in langs:
