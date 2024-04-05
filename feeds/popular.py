@@ -32,7 +32,7 @@ class PopularFeed(BaseFeed):
         if collection != 'app.bsky.feed.like':
             return
 
-        record = op['record']
+        record = op.get('record')
         if record is None:
             return
 

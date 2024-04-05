@@ -34,7 +34,9 @@ class RapidFireFeed(BaseFeed):
         if collection != 'app.bsky.feed.post':
             return
 
-        record = op['record']
+        record = op.get('record')
+        if record is None:
+            return
 
         if all([
             len(record['text']) <= MAX_TEXT_LENGTH,
