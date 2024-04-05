@@ -53,13 +53,12 @@ class RapidFireFeed(BaseFeed):
             post_uri = f'at://{repo}/{path}'
             ts = self.safe_timestamp(record['createdAt']).timestamp()
 
-            with self.db_cnx:
-                langs = record.get('langs') or ['']
-                for lang in langs:
-                    self.db_cnx.execute(
-                        'insert into posts (uri, create_ts, lang) values (:uri, :ts, :lang)',
-                        dict(uri=post_uri, ts=ts, lang=lang)
-                    )
+            langs = record.get('langs') or ['']
+            for lang in langs:
+                self.db_cnx.execute(
+                    'insert into posts (uri, create_ts, lang) values (:uri, :ts, :lang)',
+                    dict(uri=post_uri, ts=ts, lang=lang)
+                )
 
     def run_tasks_minute(self):
         self.logger.debug('running minute tasks')
