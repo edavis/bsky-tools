@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from flask import Flask, request, jsonify
+from werkzeug.datastructures import LanguageAccept
 
 from feed_manager import feed_manager
 from feeds.rapidfire import RapidFireFeed
@@ -28,6 +29,10 @@ def get_feed_skeleton():
     langs = request.accept_languages
 
     if request.args.get('debug', '0') == '1':
+        if request.args.getlist('langs'):
+            req_langs = request.args.getlist('langs')
+            langs = LanguageAccept([(l, 1) for l in req_langs])
+
         headers = {'Content-Type': 'text/plain; charset=utf-8'}
         debug = feed_manager.serve_feed_debug(feed_uri, limit, offset, langs)
         return debug, headers

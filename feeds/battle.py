@@ -18,10 +18,11 @@ class BattleFeed(BaseFeed):
             self.db_cnx.execute("""
             create table if not exists posts (
                 uri text,
-                grapheme_length integer unique,
+                grapheme_length integer,
                 create_ts timestamp,
                 lang text
             );
+            create unique index if not exists ll_idx on posts(grapheme_length, lang);
             """)
 
         self.logger = logging.getLogger('feeds.battle')
@@ -42,7 +43,7 @@ class BattleFeed(BaseFeed):
         repo = commit['repo']
         path = op['path']
         post_uri = f'at://{repo}/{path}'
-        l = grapheme.length(record['text'])
+        length = grapheme.length(record['text'])
         ts = self.safe_timestamp(record['createdAt']).timestamp()
 
         self.transaction_begin(self.db_cnx)
@@ -52,8 +53,8 @@ class BattleFeed(BaseFeed):
             self.db_cnx.execute("""
             insert into posts(uri, grapheme_length, create_ts, lang)
             values(:uri, :length, :ts, :lang)
-            on conflict(grapheme_length) do update set uri = :uri
-            """, dict(uri=post_uri, length=l, ts=ts, lang=lang))
+            on conflict do update set uri = :uri, create_ts = :ts
+            """, dict(uri=post_uri, length=length, ts=ts, lang=lang))
 
     def commit_changes(self):
         self.logger.debug('committing changes')
@@ -61,38 +62,40 @@ class BattleFeed(BaseFeed):
         self.wal_checkpoint(self.db_cnx, 'RESTART')
 
     def serve_feed(self, limit, offset, langs):
-        # if '*' in langs:
-        #     cur = self.db_cnx.execute(
-        #         "select uri from posts order by grapheme_length asc limit :limit offset :offset",
-        #         dict(limit=limit, offset=offset)
-        #     )
-        #     return [uri for (uri,) in cur]
-        # else:
-        #     lang_values = list(langs.values())
-        #     lang_selects = ['select uri, grapheme_length from posts where lang = ?'] * len(lang_values)
-        #     lang_clause = ' union '.join(lang_selects)
-        #     cur = self.db_cnx.execute(
-        #         lang_clause + ' order by grapheme_length asc limit ? offset ?',
-        #         [*lang_values, limit, offset]
-        #     )
-        #     return [uri for (uri, create_ts) in cur]
-
-        cur = self.db_cnx.execute("""
-        select uri
-        from posts
-        order by grapheme_length asc
-        limit :limit offset :offset
-        """, dict(limit=limit, offset=offset))
-        return [uri for (uri,) in cur]
+        if '*' in langs:
+            cur = self.db_cnx.execute("""
+            select uri
+            from posts
+            order by grapheme_length asc
+            limit :limit offset :offset
+            """, dict(limit=limit, offset=offset))
+            return [uri for (uri,) in cur]
+        else:
+            lang_values = list(langs.values())
+            lang_selects = ['select uri, grapheme_length from posts where lang = ?'] * len(lang_values)
+            lang_clause = ' union '.join(lang_selects)
+            cur = self.db_cnx.execute(
+                lang_clause + ' order by grapheme_length asc limit ? offset ?',
+                [*lang_values, limit, offset]
+            )
+            return [uri for (uri, grapheme_length) in cur]
 
     def serve_feed_debug(self, limit, offset, langs):
-        query = """
-        select *
-        from posts
-        order by grapheme_length asc
-        limit :limit offset :offset
-        """
-        bindings = dict(limit=limit, offset=offset)
+        if '*' in langs:
+            query = """
+            select *, unixepoch('now') - create_ts as age_seconds
+            from posts
+            order by grapheme_length asc
+            limit :limit offset :offset
+            """
+            bindings = [limit, offset]
+        else:
+            lang_values = list(langs.values())
+            lang_selects = ["select *, unixepoch('now') - create_ts as age_seconds from posts where lang = ?"] * len(lang_values)
+            lang_clause = ' union '.join(lang_selects)
+            query = lang_clause + ' order by grapheme_length asc limit ? offset ?'
+            bindings = [*lang_values, limit, offset]
+
         return apsw.ext.format_query_table(
             self.db_cnx, query, bindings,
             string_sanitize=2, text_width=9999, use_unicode=True
