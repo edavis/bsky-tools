@@ -12,8 +12,7 @@ class FirehoseManager:
         self.logger = logging.getLogger('feeds.firehose')
 
     def get_sequence_number(self):
-        cur = self.db_cnx.execute("select * from firehose where key = 'seq'")
-        row = cur.fetchone()
+        row = self.db_cnx.execute("select * from firehose where key = 'seq'").fetchone()
         if row is None:
             return None
         (key, value) = row
