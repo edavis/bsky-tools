@@ -60,7 +60,7 @@ async def main():
     async for commit in firehose_events(firehose_manager):
         feed_manager.process_commit(commit)
         event_count += 1
-        if event_count % 500 == 0:
+        if event_count % 2000 == 0:
             feed_manager.commit_changes()
             firehose_manager.set_sequence_number(commit['seq'])
 
