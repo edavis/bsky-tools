@@ -29,6 +29,12 @@ def get_feed_skeleton():
         feed_uri = request.args['feed']
 
     langs = request.accept_languages
+
+    if request.args.get('debug', '0') == '1':
+        headers = {'Content-Type': 'text/plain; charset=utf-8'}
+        debug = manager.serve_feed_debug(feed_uri, limit, offset, langs)
+        return debug, headers
+
     posts = manager.serve_feed(feed_uri, limit, offset, langs)
     offset += len(posts)
 

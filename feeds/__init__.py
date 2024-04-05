@@ -63,6 +63,11 @@ class FeedManager:
         if feed is not None:
             return feed.serve_feed(limit, offset, langs)
 
+    def serve_feed_debug(self, feed_uri, limit, offset, langs):
+        feed = self.feeds.get(feed_uri)
+        if feed is not None:
+            return feed.serve_feed_debug(limit, offset, langs)
+
     def run_tasks_minute(self):
         for feed in self.feeds.values():
             feed.run_tasks_minute()
