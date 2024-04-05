@@ -7,8 +7,8 @@ class BaseFeed:
     def serve_feed(self, limit, offset, langs):
         raise NotImplementedError
 
-    def run_tasks_minute(self):
-        pass
+    def commit_changes(self):
+        raise NotImplementedError
 
     def parse_timestamp(self, timestamp):
         # https://atproto.com/specs/lexicon#datetime

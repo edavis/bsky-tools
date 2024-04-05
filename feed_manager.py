@@ -22,9 +22,9 @@ class FeedManager:
         if feed is not None:
             return feed.serve_feed_debug(limit, offset, langs)
 
-    def run_tasks_minute(self):
+    def commit_changes(self):
         for feed in self.feeds.values():
-            feed.run_tasks_minute()
+            feed.commit_changes()
 
 feed_manager = FeedManager()
 # feed_manager.register(PopularFeed)

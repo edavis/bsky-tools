@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import asyncio
-from datetime import datetime, timezone
 from io import BytesIO
 import logging
 
@@ -56,15 +55,13 @@ async def firehose_events(firehose_manager):
 
 async def main():
     firehose_manager = FirehoseManager()
+    event_count = 0
 
-    current_minute = None
     async for commit in firehose_events(firehose_manager):
         feed_manager.process_commit(commit)
-
-        now = datetime.now(timezone.utc)
-        if now.minute != current_minute:
-            current_minute = now.minute
-            feed_manager.run_tasks_minute()
+        event_count += 1
+        if event_count % 500 == 0:
+            feed_manager.commit_changes()
             firehose_manager.set_sequence_number(commit['seq'])
 
 if __name__ == '__main__':
