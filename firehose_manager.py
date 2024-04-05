@@ -27,4 +27,4 @@ class FirehoseManager:
                 dict(value=value)
             )
 
-        self.db_cnx.pragma('wal_checkpoint(TRUNCATE)')
+        self.db_cnx.pragma('wal_checkpoint(RESTART)')
