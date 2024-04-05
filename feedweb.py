@@ -2,7 +2,7 @@
 
 from flask import Flask, request, jsonify
 
-from feed_manager import FeedManager
+from feed_manager import manager as feed_manager
 from feeds.rapidfire import RapidFireFeed
 from feeds.popular import PopularFeed
 
@@ -10,10 +10,6 @@ app = Flask(__name__)
 
 @app.route('/xrpc/app.bsky.feed.getFeedSkeleton')
 def get_feed_skeleton():
-    manager = FeedManager()
-    manager.register(RapidFireFeed)
-    # manager.register(PopularFeed)
-
     try:
         limit = int(request.args.get('limit', 50))
     except ValueError:
@@ -33,10 +29,10 @@ def get_feed_skeleton():
 
     if request.args.get('debug', '0') == '1':
         headers = {'Content-Type': 'text/plain; charset=utf-8'}
-        debug = manager.serve_feed_debug(feed_uri, limit, offset, langs)
+        debug = feed_manager.serve_feed_debug(feed_uri, limit, offset, langs)
         return debug, headers
 
-    posts = manager.serve_feed(feed_uri, limit, offset, langs)
+    posts = feed_manager.serve_feed(feed_uri, limit, offset, langs)
     offset += len(posts)
 
     return dict(cursor=str(offset), feed=[dict(post=uri) for uri in posts])

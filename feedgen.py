@@ -9,9 +9,7 @@ from atproto import CAR
 import dag_cbor
 import websockets
 
-from feed_manager import FeedManager
-from feeds.rapidfire import RapidFireFeed
-from feeds.popular import PopularFeed
+from feed_manager import manager as feed_manager
 from firehose_manager import FirehoseManager
 
 logging.basicConfig(
@@ -58,10 +56,6 @@ async def firehose_events(firehose_manager):
 
 async def main():
     firehose_manager = FirehoseManager()
-
-    feed_manager = FeedManager()
-    feed_manager.register(RapidFireFeed)
-    # feed_manager.register(PopularFeed)
 
     current_minute = None
     async for commit in firehose_events(firehose_manager):

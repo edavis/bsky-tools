@@ -1,3 +1,6 @@
+from feeds.popular import PopularFeed
+from feeds.rapidfire import RapidFireFeed
+
 class FeedManager:
     def __init__(self):
         self.feeds = {}
@@ -22,3 +25,8 @@ class FeedManager:
     def run_tasks_minute(self):
         for feed in self.feeds.values():
             feed.run_tasks_minute()
+
+
+manager = FeedManager()
+# manager.register(PopularFeed)
+manager.register(RapidFireFeed)
