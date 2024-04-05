@@ -62,7 +62,7 @@ class RapidFireFeed(BaseFeed):
         )
 
     def commit_changes(self):
-        self.logger.debug('comitting changes')
+        self.logger.debug('committing changes')
         self.delete_old_posts()
         self.transaction_commit(self.db_cnx)
         self.wal_checkpoint(self.db_cnx, 'RESTART')
