@@ -3,7 +3,7 @@ import logging
 import apsw
 
 class FirehoseManager:
-    def __init__(self, fname='firehose.db'):
+    def __init__(self, fname='db/firehose.db'):
         self.db_cnx = apsw.Connection(fname)
         self.db_cnx.pragma('journal_mode', 'WAL')
         with self.db_cnx:
