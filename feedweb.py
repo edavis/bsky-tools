@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-from feeds import FeedManager
+from flask import Flask, request, jsonify
+
+from feed_manager import FeedManager
 from feeds.rapidfire import RapidFireFeed
 from feeds.popular import PopularFeed
-from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
@@ -43,4 +44,5 @@ def get_feed_skeleton():
 if __name__ == '__main__':
     from feedweb_utils import did_doc
     app.add_url_rule('/.well-known/did.json', view_func=did_doc)
+
     app.run(debug=True)

@@ -1,7 +1,8 @@
+import logging
 import os
+
 import apsw
 import apsw.ext
-import logging
 
 from . import BaseFeed
 

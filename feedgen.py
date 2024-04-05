@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 
 import asyncio
-import dag_cbor
+from datetime import datetime, timezone
+from io import BytesIO
 import logging
-import sys
-import websockets
 
 from atproto import CAR
-from io import BytesIO
-from datetime import datetime, timezone
+import dag_cbor
+import websockets
 
-from feeds import FeedManager
+from feed_manager import FeedManager
 from feeds.rapidfire import RapidFireFeed
 from feeds.popular import PopularFeed
 from firehose_manager import FirehoseManager
@@ -28,8 +27,8 @@ async def firehose_events(firehose_manager):
     if seq:
         relay_url += f'?cursor={seq}'
 
-    sys.stdout.write(f'opening websocket connection to {relay_url}\n')
-    sys.stdout.flush()
+    logger = logging.getLogger('feeds.events')
+    logger.info(f'opening websocket connection to {relay_url}')
 
     async with websockets.connect(relay_url, ping_timeout=None) as firehose:
         while True:
@@ -52,7 +51,8 @@ async def firehose_events(firehose_manager):
                 repo_op = op.copy()
                 if op['cid'] is not None:
                     repo_op['cid'] = repo_op['cid'].encode('base32')
-                    repo_op['record'] = car_parsed.blocks[repo_op['cid']]
+                    repo_op['record'] = car_parsed.blocks.get(repo_op['cid'])
+
                 message['op'] = repo_op
                 yield message
 

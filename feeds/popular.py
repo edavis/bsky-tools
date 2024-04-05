@@ -1,5 +1,6 @@
-import os
 import logging
+import os
+
 import apsw
 
 from . import BaseFeed

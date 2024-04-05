@@ -1,5 +1,6 @@
-import apsw
 import logging
+
+import apsw
 
 class FirehoseManager:
     def __init__(self, fname='firehose.db'):
