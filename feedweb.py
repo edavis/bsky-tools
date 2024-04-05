@@ -2,7 +2,7 @@
 
 from flask import Flask, request, jsonify
 
-from feed_manager import manager as feed_manager
+from feed_manager import feed_manager
 from feeds.rapidfire import RapidFireFeed
 from feeds.popular import PopularFeed
 

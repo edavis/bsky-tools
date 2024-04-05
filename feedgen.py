@@ -9,7 +9,7 @@ from atproto import CAR
 import dag_cbor
 import websockets
 
-from feed_manager import manager as feed_manager
+from feed_manager import feed_manager
 from firehose_manager import FirehoseManager
 
 logging.basicConfig(

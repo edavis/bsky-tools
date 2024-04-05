@@ -26,7 +26,6 @@ class FeedManager:
         for feed in self.feeds.values():
             feed.run_tasks_minute()
 
-
-manager = FeedManager()
-# manager.register(PopularFeed)
-manager.register(RapidFireFeed)
+feed_manager = FeedManager()
+# feed_manager.register(PopularFeed)
+feed_manager.register(RapidFireFeed)
