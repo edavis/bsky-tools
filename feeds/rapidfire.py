@@ -1,5 +1,4 @@
 import logging
-import os
 
 import apsw
 import apsw.ext
@@ -14,16 +13,8 @@ class RapidFireFeed(BaseFeed):
     def __init__(self):
         super().__init__()
 
-        db_fname = ''
-        if os.path.isdir('/dev/shm/'):
-            os.makedirs('/dev/shm/feedgens/', exist_ok=True)
-            db_fname = '/dev/shm/feedgens/rapidfire.db'
-        else:
-            db_fname = 'db/rapidfire.db'
-
-        self.db_cnx = apsw.Connection(db_fname)
+        self.db_cnx = apsw.Connection('db/rapidfire.db')
         self.db_cnx.pragma('journal_mode', 'WAL')
-        self.db_cnx.pragma('synchronous', 'OFF')
         self.db_cnx.pragma('wal_autocheckpoint', '0')
 
         with self.db_cnx:
