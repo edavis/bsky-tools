@@ -1,9 +1,6 @@
 from datetime import datetime, timezone, timedelta
 
 class BaseFeed:
-    def __init__(self):
-        self.in_transaction = False
-
     def process_commit(self, commit):
         raise NotImplementedError
 
@@ -51,14 +48,12 @@ class BaseFeed:
             return utc_now
 
     def transaction_begin(self, db):
-        if not self.in_transaction:
+        if not db.in_transaction:
             db.execute('BEGIN')
-            self.in_transaction = True
 
     def transaction_commit(self, db):
-        if self.in_transaction:
+        if db.in_transaction:
             db.execute('COMMIT')
-            self.in_transaction = False
 
     def wal_checkpoint(self, db, mode='PASSIVE'):
         db.pragma(f'wal_checkpoint({mode})')

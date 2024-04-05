@@ -9,8 +9,6 @@ class PopularFeed(BaseFeed):
     FEED_URI = 'at://did:plc:4nsduwlpivpuur4mqkbfvm6a/app.bsky.feed.generator/popular'
 
     def __init__(self):
-        super().__init__()
-
         self.db_cnx = apsw.Connection('db/popular.db')
         self.db_cnx.pragma('journal_mode', 'WAL')
         self.db_cnx.pragma('wal_autocheckpoint', '0')

@@ -11,8 +11,6 @@ class RapidFireFeed(BaseFeed):
     FEED_URI = 'at://did:plc:4nsduwlpivpuur4mqkbfvm6a/app.bsky.feed.generator/rapidfire'
 
     def __init__(self):
-        super().__init__()
-
         self.db_cnx = apsw.Connection('db/rapidfire.db')
         self.db_cnx.pragma('journal_mode', 'WAL')
         self.db_cnx.pragma('wal_autocheckpoint', '0')
