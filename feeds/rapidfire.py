@@ -2,6 +2,7 @@ import logging
 
 import apsw
 import apsw.ext
+import grapheme
 
 from . import BaseFeed
 
@@ -37,7 +38,7 @@ class RapidFireFeed(BaseFeed):
             return
 
         if all([
-            len(record['text']) <= MAX_TEXT_LENGTH,
+            grapheme.length(record['text']) <= MAX_TEXT_LENGTH,
             record.get('reply') is None,
             record.get('embed') is None,
             record.get('facets') is None
@@ -86,7 +87,7 @@ class RapidFireFeed(BaseFeed):
 
     def serve_feed_debug(self, limit, offset, langs):
         query = """
-        select *, unixepoch('now') as now
+        select *, unixepoch('now') - create_ts as age_seconds
         from posts
         order by create_ts desc
         limit :limit offset :offset

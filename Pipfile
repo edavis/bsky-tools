@@ -12,6 +12,7 @@ flask = "*"
 requests = "*"
 gunicorn = "*"
 apsw = "*"
+grapheme = "*"
 
 [dev-packages]
 
