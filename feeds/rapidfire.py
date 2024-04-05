@@ -90,11 +90,10 @@ class RapidFireFeed(BaseFeed):
 
     def serve_feed_debug(self, limit, offset, langs):
         query = (
-            "select count(*) from posts;"
             "select *, unixepoch('now') from posts order by create_ts desc limit :limit offset :offset;"
         )
         bindings = dict(limit=limit, offset=offset)
         return apsw.ext.format_query_table(
             self.db_cnx, query, bindings,
-            string_sanitize=2, text_width=9999, use_unicode=False, quote=True
+            string_sanitize=2, text_width=9999, use_unicode=True
         )
