@@ -85,9 +85,12 @@ class RapidFireFeed(BaseFeed):
             return [uri for (uri, create_ts) in cur]
 
     def serve_feed_debug(self, limit, offset, langs):
-        query = (
-            "select *, unixepoch('now') from posts order by create_ts desc limit :limit offset :offset;"
-        )
+        query = """
+        select *, unixepoch('now') as now
+        from posts
+        order by create_ts desc
+        limit :limit offset :offset
+        """
         bindings = dict(limit=limit, offset=offset)
         return apsw.ext.format_query_table(
             self.db_cnx, query, bindings,
