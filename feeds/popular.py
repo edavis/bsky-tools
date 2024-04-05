@@ -1,7 +1,7 @@
 import logging
-import os
 
 import apsw
+import apsw.ext
 
 from . import BaseFeed
 
@@ -9,16 +9,10 @@ class PopularFeed(BaseFeed):
     FEED_URI = 'at://did:plc:4nsduwlpivpuur4mqkbfvm6a/app.bsky.feed.generator/popular'
 
     def __init__(self):
-        db_fname = ''
-        if os.path.isdir('/dev/shm/'):
-            os.makedirs('/dev/shm/feedgens/', exist_ok=True)
-            db_fname = '/dev/shm/feedgens/popular.db'
-        else:
-            db_fname = 'db/popular.db'
+        super().__init__()
 
-        self.db_cnx = apsw.Connection(db_fname)
+        self.db_cnx = apsw.Connection('db/popular.db')
         self.db_cnx.pragma('journal_mode', 'WAL')
-        self.db_cnx.pragma('synchronous', 'OFF')
         self.db_cnx.pragma('wal_autocheckpoint', '0')
 
         with self.db_cnx:
@@ -38,31 +32,60 @@ class PopularFeed(BaseFeed):
         if collection != 'app.bsky.feed.like':
             return
 
-        ts = commit['time']
+        record = op['record']
+        if record is None:
+            return
+
+        ts = self.safe_timestamp(record['createdAt']).timestamp()
         like_subject_uri = op['record']['subject']['uri']
 
-        with self.db_cnx:
-            self.db_cnx.execute((
-                "insert into posts (uri, create_ts, update_ts, temperature) "
-                "values (:uri, :ts, :ts, 1) "
-                "on conflict (uri) do update set temperature = temperature + 1, update_ts = :ts"
-            ), dict(uri=like_subject_uri, ts=ts))
+        self.transaction_begin(self.db_cnx)
 
-    def run_tasks_minute(self):
-        self.logger.debug('running minute tasks')
+        self.db_cnx.execute("""
+        insert into posts (uri, create_ts, update_ts, temperature)
+        values (:uri, :ts, :ts, 1)
+        on conflict (uri) do update set temperature = temperature + 1, update_ts = :ts
+        """, dict(uri=like_subject_uri, ts=ts))
 
-        with self.db_cnx:
-            self.db_cnx.execute(
-                "delete from posts where temperature * exp( -1 * ( ( strftime( '%s', 'now' ) - strftime( '%s', create_ts ) ) / 1800.0 ) ) < 1.0 and strftime( '%s', create_ts ) < strftime( '%s', 'now', '-15 minutes' )"
-            )
+    def delete_old_posts(self):
+        self.db_cnx.execute("""
+        delete from posts
+        where
+            temperature * exp( -1 * ( ( unixepoch('now') - create_ts ) / 1800.0 ) ) < 1.0
+            and create_ts < unixepoch('now', '-15 minutes')
+        """)
 
-        self.db_cnx.pragma('wal_checkpoint(TRUNCATE)')
+    def commit_changes(self):
+        self.logger.debug('committing changes')
+        self.delete_old_posts()
+        self.transaction_commit(self.db_cnx)
+        self.wal_checkpoint(self.db_cnx, 'RESTART')
 
     def serve_feed(self, limit, offset, langs):
-        cur = self.db_cnx.execute((
-            "select uri from posts "
-            "order by temperature * exp( "
-            "-1 * ( ( strftime( '%s', 'now' ) - strftime( '%s', create_ts ) ) / 1800.0 ) "
-            ") desc limit :limit offset :offset"
-        ), dict(limit=limit, offset=offset))
+        cur = self.db_cnx.execute("""
+        select uri from posts
+        order by temperature * exp( -1 * ( ( unixepoch('now') - create_ts ) / 1800.0 ) )
+        desc limit :limit offset :offset
+        """, dict(limit=limit, offset=offset))
         return [uri for (uri,) in cur]
+
+    def serve_feed_debug(self, limit, offset, langs):
+        query = """
+        select
+            uri, temperature,
+            unixepoch('now') - create_ts as age_seconds,
+            exp(
+              -1 * ( ( unixepoch('now') - create_ts ) / 1800.0 )
+            ) as decay,
+            temperature * exp(
+              -1 * ( ( unixepoch('now') - create_ts ) / 1800.0 )
+            ) as score
+        from posts
+        order by score desc
+        limit :limit offset :offset
+        """
+        bindings = dict(limit=limit, offset=offset)
+        return apsw.ext.format_query_table(
+            self.db_cnx, query, bindings,
+            string_sanitize=2, text_width=9999, use_unicode=True
+        )

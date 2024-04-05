@@ -27,5 +27,5 @@ class FeedManager:
             feed.commit_changes()
 
 feed_manager = FeedManager()
-# feed_manager.register(PopularFeed)
+feed_manager.register(PopularFeed)
 feed_manager.register(RapidFireFeed)
