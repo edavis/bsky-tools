@@ -61,7 +61,7 @@ async def bsky_activity():
                 op = commit_op.copy()
                 if op['cid'] is not None:
                     op['cid'] = op['cid'].encode('base32')
-                    # op['record'] = car_parsed.blocks.get(op['cid'])
+                    op['record'] = car_parsed.blocks.get(op['cid'])
 
                 yield message, op
 
