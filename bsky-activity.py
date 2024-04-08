@@ -51,7 +51,7 @@ async def bsky_activity():
 
             # TODO(ejd): figure out how to validate blocks
             blocks = payload.pop('blocks')
-            car_parsed = dict(blocks = {})
+            car_parsed = CAR.from_bytes(blocks)
 
             message = payload.copy()
             del message['ops']
