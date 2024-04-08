@@ -17,6 +17,7 @@ logging.basicConfig(
 )
 logging.getLogger('').setLevel(logging.WARNING)
 logging.getLogger('feeds').setLevel(logging.DEBUG)
+logging.getLogger('firehose').setLevel(logging.DEBUG)
 
 async def firehose_events(firehose_manager):
     relay_url = 'wss://bsky.network/xrpc/com.atproto.sync.subscribeRepos'

@@ -9,7 +9,7 @@ class FirehoseManager:
         with self.db_cnx:
             self.db_cnx.execute("create table if not exists firehose(key text unique, value text)")
 
-        self.logger = logging.getLogger('feeds.firehose')
+        self.logger = logging.getLogger('firehose.manager')
 
     def get_sequence_number(self):
         row = self.db_cnx.execute("select * from firehose where key = 'seq'").fetchone()
