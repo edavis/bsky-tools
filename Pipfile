@@ -13,6 +13,7 @@ requests = "*"
 gunicorn = "*"
 apsw = "*"
 grapheme = "*"
+prometheus-client = "*"
 
 [dev-packages]
 
