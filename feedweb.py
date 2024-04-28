@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 
 from flask import Flask, request, jsonify
+from prometheus_client import Counter, make_wsgi_app
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from werkzeug.datastructures import LanguageAccept
 
 from feed_manager import feed_manager
 from feeds.rapidfire import RapidFireFeed
 from feeds.popular import PopularFeed
+
+feed_requests = Counter('feed_requests', 'requests by feed URI', ['feed'])
 
 app = Flask(__name__)
 
@@ -26,6 +30,8 @@ def get_feed_skeleton():
     else:
         feed_uri = request.args['feed']
 
+    feed_requests.labels(feed_uri).inc()
+
     langs = request.accept_languages
 
     if request.args.get('debug', '0') == '1':
@@ -41,6 +47,10 @@ def get_feed_skeleton():
     offset += len(posts)
 
     return dict(cursor=str(offset), feed=[dict(post=uri) for uri in posts])
+
+app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
+    '/metrics': make_wsgi_app()
+})
 
 if __name__ == '__main__':
     from feedweb_utils import did_doc
