@@ -25,25 +25,25 @@ def get_feed_skeleton():
     except ValueError:
         offset = 0
 
-    if request.args['feed'].endswith('-dev'):
-        feed_uri = request.args['feed'].replace('-dev', '')
+    feed_uri = request.args['feed']
+    if feed_uri.endswith('-dev'):
+        feed_uri = feed_uri.replace('-dev', '')
     else:
-        feed_uri = request.args['feed']
+        (prefix, sep, rkey) = feed_uri.rpartition('/')
+        feed_requests.labels(rkey).inc()
 
-    feed_requests.labels(feed_uri).inc()
-
-    langs = request.accept_languages
+    if request.args.getlist('langs'):
+        req_langs = request.args.getlist('langs')
+        langs = LanguageAccept([(l, 1) for l in req_langs])
+    else:
+        langs = request.accept_languages
 
     if request.args.get('debug', '0') == '1':
-        if request.args.getlist('langs'):
-            req_langs = request.args.getlist('langs')
-            langs = LanguageAccept([(l, 1) for l in req_langs])
-
         headers = {'Content-Type': 'text/plain; charset=utf-8'}
-        debug = feed_manager.serve_feed_debug(feed_uri, limit, offset, langs)
+        debug = feed_manager.serve_feed(feed_uri, limit, offset, langs, debug=True)
         return debug, headers
 
-    posts = feed_manager.serve_feed(feed_uri, limit, offset, langs)
+    posts = feed_manager.serve_feed(feed_uri, limit, offset, langs, debug=False)
     offset += len(posts)
 
     return dict(cursor=str(offset), feed=[dict(post=uri) for uri in posts])

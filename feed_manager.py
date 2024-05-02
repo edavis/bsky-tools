@@ -1,3 +1,5 @@
+from fnmatch import fnmatchcase
+
 from feeds.battle import BattleFeed
 from feeds.rapidfire import RapidFireFeed
 from feeds.popular import PopularFeed
@@ -13,15 +15,24 @@ class FeedManager:
         for feed in self.feeds.values():
             feed.process_commit(commit)
 
-    def serve_feed(self, feed_uri, limit, offset, langs):
-        feed = self.feeds.get(feed_uri)
-        if feed is not None:
-            return feed.serve_feed(limit, offset, langs)
+    def serve_feed(self, feed_uri, limit, offset, langs, debug=False):
+        for pattern, feed in self.feeds.items():
+            if fnmatchcase(feed_uri, pattern):
+                break
+        else:
+            raise Exception('no matching feed pattern found')
 
-    def serve_feed_debug(self, feed_uri, limit, offset, langs):
-        feed = self.feeds.get(feed_uri)
-        if feed is not None:
+        if '*' in pattern and debug:
+            return feed.serve_wildcard_feed_debug(feed_uri, limit, offset, langs)
+
+        elif '*' in pattern and not debug:
+            return feed.serve_wildcard_feed(feed_uri, limit, offset, langs)
+
+        elif '*' not in pattern and debug:
             return feed.serve_feed_debug(limit, offset, langs)
+
+        elif '*' not in pattern and not debug:
+            return feed.serve_feed(limit, offset, langs)
 
     def commit_changes(self):
         for feed in self.feeds.values():
