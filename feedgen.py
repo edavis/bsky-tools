@@ -22,7 +22,7 @@ logging.getLogger('firehose').setLevel(logging.DEBUG)
 async def firehose_events(firehose_manager):
     relay_url = 'wss://bsky.network/xrpc/com.atproto.sync.subscribeRepos'
     seq = firehose_manager.get_sequence_number()
-    if seq:
+    if seq is not None:
         relay_url += f'?cursor={seq}'
 
     logger = logging.getLogger('feeds.events')

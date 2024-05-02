@@ -3,6 +3,7 @@ from fnmatch import fnmatchcase
 from feeds.battle import BattleFeed
 from feeds.rapidfire import RapidFireFeed
 from feeds.popular import PopularFeed
+from feeds.homeruns import HomeRunsTeamFeed
 
 class FeedManager:
     def __init__(self):
@@ -42,3 +43,4 @@ feed_manager = FeedManager()
 feed_manager.register(BattleFeed)
 feed_manager.register(RapidFireFeed)
 feed_manager.register(PopularFeed)
+feed_manager.register(HomeRunsTeamFeed)

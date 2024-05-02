@@ -6,8 +6,6 @@ from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from werkzeug.datastructures import LanguageAccept
 
 from feed_manager import feed_manager
-from feeds.rapidfire import RapidFireFeed
-from feeds.popular import PopularFeed
 
 feed_requests = Counter('feed_requests', 'requests by feed URI', ['feed'])
 

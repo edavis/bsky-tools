@@ -7,6 +7,9 @@ class BaseFeed:
     def serve_feed(self, limit, offset, langs):
         raise NotImplementedError
 
+    def serve_wildcard_feed(self, feed_uri, limit, offset, langs):
+        raise NotImplementedError
+
     def commit_changes(self):
         raise NotImplementedError
 
