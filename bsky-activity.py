@@ -25,6 +25,7 @@ app_bsky_allowlist = set([
     'app.bsky.graph.listblock',
     'app.bsky.graph.listitem',
     'app.bsky.labeler.service',
+    'chat.bsky.actor.declaration',
 ])
 
 async def bsky_activity():
