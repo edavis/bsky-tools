@@ -46,7 +46,7 @@ class RapidFireFeed(BaseFeed):
             repo = commit['repo']
             path = op['path']
             post_uri = f'at://{repo}/{path}'
-            ts = self.safe_timestamp(record['createdAt']).timestamp()
+            ts = self.safe_timestamp(record.get('createdAt', '')).timestamp()
 
             self.transaction_begin(self.db_cnx)
 
