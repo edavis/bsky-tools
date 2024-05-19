@@ -34,7 +34,7 @@ class PopularFeed(BaseFeed):
         if record is None:
             return
 
-        ts = self.safe_timestamp(record['createdAt']).timestamp()
+        ts = self.safe_timestamp(record.get('createdAt')).timestamp()
         like_subject_uri = op['record']['subject']['uri']
 
         self.transaction_begin(self.db_cnx)

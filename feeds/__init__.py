@@ -41,8 +41,11 @@ class BaseFeed:
         return datetime.now(timezone.utc)
 
     def safe_timestamp(self, timestamp):
-        parsed = self.parse_timestamp(timestamp)
         utc_now = datetime.now(timezone.utc)
+        if timestamp is None:
+            return utc_now
+
+        parsed = self.parse_timestamp(timestamp)
         if parsed.timestamp() <= 0:
             return utc_now
         elif parsed - timedelta(minutes=2) < utc_now:
