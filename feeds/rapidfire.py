@@ -38,7 +38,7 @@ class RapidFireFeed(BaseFeed):
             return
 
         if all([
-            grapheme.length(record['text']) <= MAX_TEXT_LENGTH,
+            grapheme.length(record.get('text', '')) <= MAX_TEXT_LENGTH,
             record.get('reply') is None,
             record.get('embed') is None,
             record.get('facets') is None

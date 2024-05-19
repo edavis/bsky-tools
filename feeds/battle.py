@@ -43,7 +43,7 @@ class BattleFeed(BaseFeed):
         repo = commit['repo']
         path = op['path']
         post_uri = f'at://{repo}/{path}'
-        length = grapheme.length(record['text'])
+        length = grapheme.length(record.get('text', ''))
         ts = self.safe_timestamp(record['createdAt']).timestamp()
 
         self.transaction_begin(self.db_cnx)
