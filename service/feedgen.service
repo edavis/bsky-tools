@@ -9,7 +9,7 @@ WorkingDirectory=/home/eric/bsky-tools
 ExecStart=/home/eric/.local/bin/pipenv run ./feedgen.py
 TimeoutSec=15
 Restart=on-failure
-RestartSec=300
+RestartSec=60
 StandardOutput=journal
 
 [Install]
