@@ -28,7 +28,7 @@ async def firehose_events(firehose_manager):
     logger = logging.getLogger('feeds.events')
     logger.info(f'opening websocket connection to {relay_url}')
 
-    async with websockets.connect(relay_url) as firehose:
+    async with websockets.connect(relay_url, ping_timeout=60) as firehose:
         while True:
             frame = BytesIO(await firehose.recv())
             header = dag_cbor.decode(frame, allow_concat=True)
