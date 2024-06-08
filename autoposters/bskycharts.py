@@ -3,25 +3,26 @@
 import time
 
 import atproto
+import requests
 
 
 BSKY_HANDLE = 'bskycharts.edavis.dev'
 BSKY_APP_PASSWORD = ''
-BSKY_ACTIVITY_IMAGE_PATH = '/var/www/munin/edavis.dev/bskycharts.edavis.dev/bsky-day.png'
+BSKY_ACTIVITY_IMAGE_URL = 'https://bskycharts.edavis.dev/munin-cgi/munin-cgi-graph/edavis.dev/bskycharts.edavis.dev/bsky-day.png'
 
 
 def main():
-    time.sleep(10) # let the charts finish updating
-
     client = atproto.Client()
     client.login(BSKY_HANDLE, BSKY_APP_PASSWORD)
 
-    with open(BSKY_ACTIVITY_IMAGE_PATH, 'rb') as chart:
-        client.send_image(
-            text = '',
-            image = chart.read(),
-            image_alt = 'munin chart showing daily bluesky network activity'
-        )
+    resp = requests.get(BSKY_ACTIVITY_IMAGE_URL)
+    resp.raise_for_status()
+
+    client.send_image(
+        text = '',
+        image = resp.content,
+        image_alt = 'munin chart showing daily bluesky network activity'
+    )
 
 
 if __name__ == '__main__':
