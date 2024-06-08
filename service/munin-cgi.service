@@ -1,0 +1,16 @@
+[Unit]
+Description=Munin graph CGI
+After=network.target syslog.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/spawn-fcgi -n -s /var/run/munin/fastcgi-graph.sock -u www-data /usr/lib/munin/cgi/munin-cgi-graph
+TimeoutSec=15
+Restart=on-failure
+RestartSec=1
+SyslogIdentifier=munin-cgi
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target
