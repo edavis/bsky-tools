@@ -57,24 +57,22 @@ class HomeRunsTeamFeed(BaseFeed):
         self.logger = logging.getLogger('feeds.homeruns')
 
     def process_commit(self, commit):
-        if commit['repo'] != MLBHRS_DID:
+        if commit['did'] != MLBHRS_DID:
             return
 
-        op = commit['op']
-        if op['action'] != 'create':
+        if commit['opType'] != 'c':
             return
 
-        collection, _ = op['path'].split('/')
-        if collection != 'app.bsky.feed.post':
+        if commit['collection'] != 'app.bsky.feed.post':
             return
 
-        record = op.get('record')
+        record = commit.get('record')
         if record is None:
             return
 
-        uri = 'at://{repo}/{path}'.format(
-            repo = commit['repo'],
-            path = op['path']
+        uri = 'at://{repo}/app.bsky.feed.post/{rkey}'.format(
+            repo = commit['did'],
+            rkey = commit['rkey']
         )
         tags = record.get('tags', [])
 

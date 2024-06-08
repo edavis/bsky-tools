@@ -25,15 +25,13 @@ class RapidFireFeed(BaseFeed):
         self.logger = logging.getLogger('feeds.rapidfire')
 
     def process_commit(self, commit):
-        op = commit['op']
-        if op['action'] != 'create':
+        if commit['opType'] != 'c':
             return
 
-        collection, _ = op['path'].split('/')
-        if collection != 'app.bsky.feed.post':
+        if commit['collection'] != 'app.bsky.feed.post':
             return
 
-        record = op.get('record')
+        record = commit.get('record')
         if record is None:
             return
 
@@ -43,9 +41,9 @@ class RapidFireFeed(BaseFeed):
             record.get('embed') is None,
             record.get('facets') is None
         ]):
-            repo = commit['repo']
-            path = op['path']
-            post_uri = f'at://{repo}/{path}'
+            repo = commit['did']
+            rkey = commit['rkey']
+            post_uri = f'at://{repo}/app.bsky.feed.post/{rkey}'
             ts = self.safe_timestamp(record.get('createdAt')).timestamp()
 
             self.transaction_begin(self.db_cnx)

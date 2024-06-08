@@ -2,6 +2,7 @@
 
 import asyncio
 from io import BytesIO
+import json
 import logging
 
 from atproto import CAR
@@ -20,39 +21,15 @@ logging.getLogger('feeds').setLevel(logging.DEBUG)
 logging.getLogger('firehose').setLevel(logging.DEBUG)
 
 async def firehose_events(firehose_manager):
-    relay_url = 'wss://bsky.network/xrpc/com.atproto.sync.subscribeRepos'
-    seq = firehose_manager.get_sequence_number()
-    if seq is not None:
-        relay_url += f'?cursor={seq}'
+    relay_url = 'ws://localhost:6008/subscribe'
 
     logger = logging.getLogger('feeds.events')
     logger.info(f'opening websocket connection to {relay_url}')
 
     async with websockets.connect(relay_url, ping_timeout=60) as firehose:
         while True:
-            frame = BytesIO(await firehose.recv())
-            header = dag_cbor.decode(frame, allow_concat=True)
-            if header['op'] != 1 or header['t'] != '#commit':
-                continue
-
-            payload = dag_cbor.decode(frame)
-            if payload['tooBig']:
-                continue
-
-            blocks = payload.pop('blocks')
-            car_parsed = CAR.from_bytes(blocks)
-            message = payload.copy()
-            del message['ops']
-            message['commit'] = message['commit'].encode('base32')
-
-            for op in payload['ops']:
-                repo_op = op.copy()
-                if op['cid'] is not None:
-                    repo_op['cid'] = repo_op['cid'].encode('base32')
-                    repo_op['record'] = car_parsed.blocks.get(repo_op['cid'])
-
-                message['op'] = repo_op
-                yield message
+            payload = BytesIO(await firehose.recv())
+            yield json.load(payload)
 
 async def main():
     firehose_manager = FirehoseManager()

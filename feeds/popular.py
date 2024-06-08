@@ -22,20 +22,18 @@ class PopularFeed(BaseFeed):
         self.logger = logging.getLogger('feeds.popular')
 
     def process_commit(self, commit):
-        op = commit['op']
-        if op['action'] != 'create':
+        if commit['opType'] != 'c':
             return
 
-        collection, _ = op['path'].split('/')
-        if collection != 'app.bsky.feed.like':
+        if commit['collection'] != 'app.bsky.feed.like':
             return
 
-        record = op.get('record')
+        record = commit.get('record')
         if record is None:
             return
 
         ts = self.safe_timestamp(record.get('createdAt')).timestamp()
-        like_subject_uri = op['record']['subject']['uri']
+        like_subject_uri = record['subject']['uri']
 
         self.transaction_begin(self.db_cnx)
 
