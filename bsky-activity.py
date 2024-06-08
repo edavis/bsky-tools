@@ -38,7 +38,7 @@ async def bsky_activity():
     sys.stdout.write(f'opening websocket connection to {relay_url}\n')
     sys.stdout.flush()
 
-    async with websockets.connect(relay_url) as firehose:
+    async with websockets.connect(relay_url, ping_timeout=60) as firehose:
         while True:
             frame = BytesIO(await firehose.recv())
             header = dag_cbor.decode(frame, allow_concat=True)
