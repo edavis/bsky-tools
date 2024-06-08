@@ -3,6 +3,7 @@
 import asyncio
 from datetime import datetime, timezone
 from io import BytesIO
+import json
 import os
 import sqlite3
 import sys
@@ -29,42 +30,16 @@ app_bsky_allowlist = set([
 ])
 
 async def bsky_activity():
-    redis_cnx = redis.Redis()
-    relay_url = 'wss://bsky.network/xrpc/com.atproto.sync.subscribeRepos'
-    firehose_seq = redis_cnx.get('dev.edavis.muninsky.seq')
-    if firehose_seq:
-        relay_url += f'?cursor={firehose_seq.decode()}'
+    relay_url = 'ws://localhost:6008/subscribe'
 
     sys.stdout.write(f'opening websocket connection to {relay_url}\n')
     sys.stdout.flush()
 
     async with websockets.connect(relay_url, ping_timeout=60) as firehose:
         while True:
-            frame = BytesIO(await firehose.recv())
-            header = dag_cbor.decode(frame, allow_concat=True)
-            if header['op'] != 1 or header['t'] != '#commit':
-                continue
+            payload = BytesIO(await firehose.recv())
 
-            payload = dag_cbor.decode(frame)
-            if payload['tooBig']:
-                # TODO(ejd): figure out how to get blocks out-of-band
-                continue
-
-            # TODO(ejd): figure out how to validate blocks
-            blocks = payload.pop('blocks')
-            car_parsed = CAR.from_bytes(blocks)
-
-            message = payload.copy()
-            del message['ops']
-            message['commit'] = message['commit'].encode('base32')
-
-            for commit_op in payload['ops']:
-                op = commit_op.copy()
-                if op['cid'] is not None:
-                    op['cid'] = op['cid'].encode('base32')
-                    op['record'] = car_parsed.blocks.get(op['cid'])
-
-                yield message, op
+            yield json.load(payload)
 
 async def main():
     redis_cnx = redis.Redis()
@@ -89,16 +64,16 @@ async def main():
     sys.stdout.flush()
 
     op_count = 0
-    async for commit, op in bsky_activity():
-        if op['action'] != 'create':
+    async for payload in bsky_activity():
+        if payload['opType'] != 'c':
             continue
 
-        collection, _ = op['path'].split('/')
+        collection = payload['collection']
         if collection not in app_bsky_allowlist:
             continue
 
-        repo_did = commit['repo']
-        repo_update_time = datetime.strptime(commit['time'], '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=timezone.utc)
+        repo_did = payload['did']
+        repo_update_time = datetime.now(timezone.utc)
         db_cnx.execute(
             'insert into users values (:did, :ts) on conflict (did) do update set ts = :ts',
             {'did': repo_did, 'ts': repo_update_time.timestamp()}
@@ -111,7 +86,7 @@ async def main():
         op_count += 1
         if op_count % 500 == 0:
             now = datetime.now(timezone.utc)
-            payload_seq = commit['seq']
+            payload_seq = payload['seq']
             payload_lag = now - repo_update_time
 
             sys.stdout.write(f'seq: {payload_seq}, lag: {payload_lag.total_seconds()}\n')
