@@ -67,7 +67,7 @@ class NoraZoneInteresting(BaseFeed):
         return [uri for (uri,) in cur]
 
     def serve_feed_debug(self, limit, offset, langs):
-        query = 'select uri from posts order by create_ts desc limit :limit offset :offset'
+        query = 'select * from posts order by create_ts desc limit :limit offset :offset'
         bindings = dict(limit=limit, offset=offset)
         return apsw.ext.format_query_table(
             self.db_cnx, query, bindings,
