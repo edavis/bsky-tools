@@ -44,6 +44,7 @@ class NoraZoneInteresting(BaseFeed):
             return
 
         if inner_record.get('uri') == TARGET_QUOTE_URI:
+            self.transaction_begin(self.db_cnx)
             self.logger.debug('found quote post of target, adding to feed')
             uri = 'at://{repo}/app.bsky.feed.post/{rkey}'.format(
                 repo = commit['did'],
@@ -57,6 +58,7 @@ class NoraZoneInteresting(BaseFeed):
 
     def commit_changes(self):
         self.logger.debug('committing changes')
+        self.transaction_commit(self.db_cnx)
         self.wal_checkpoint(self.db_cnx, 'RESTART')
 
     def serve_feed(self, limit, offset, langs):
