@@ -6,6 +6,8 @@ import apsw.ext
 
 from . import BaseFeed
 
+SDW_REGEX = re.compile(r'^(shit|piss|fuck|cunt|cocksucker|motherfucker|tits)\W*$', re.I|re.A)
+
 class SevenDirtyWordsFeed(BaseFeed):
     FEED_URI = 'at://did:plc:4nsduwlpivpuur4mqkbfvm6a/app.bsky.feed.generator/sdw'
 
@@ -33,8 +35,11 @@ class SevenDirtyWordsFeed(BaseFeed):
         if record is None:
             return
 
+        if record.get('reply') is not None:
+            return
+
         # https://en.wikipedia.org/wiki/Seven_dirty_words
-        if re.search(r'^.{0,16}\b(shit|shitting|piss|fuck|fucking|cunt|cocksucker|motherfucker|tits)\b.{0,16}$', record['text'], re.I) is not None:
+        if SDW_REGEX.search(record['text']) is not None:
             repo = commit['did']
             rkey = commit['rkey']
             post_uri = f'at://{repo}/app.bsky.feed.post/{rkey}'
