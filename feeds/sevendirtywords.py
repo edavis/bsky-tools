@@ -50,14 +50,8 @@ class SevenDirtyWordsFeed(BaseFeed):
                 dict(uri=post_uri, ts=ts)
             )
 
-    def delete_old_posts(self):
-        self.db_cnx.execute(
-            "delete from posts where create_ts < unixepoch('-24 hours')"
-        )
-
     def commit_changes(self):
         self.logger.debug('committing changes')
-        self.delete_old_posts()
         self.transaction_commit(self.db_cnx)
         self.wal_checkpoint(self.db_cnx, 'RESTART')
 
