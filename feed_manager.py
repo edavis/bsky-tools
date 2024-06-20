@@ -5,6 +5,7 @@ from feeds.rapidfire import RapidFireFeed
 from feeds.popular import PopularFeed
 from feeds.homeruns import HomeRunsTeamFeed
 from feeds.norazone_interesting import NoraZoneInteresting
+from feeds.sevendirtywords import SevenDirtyWordsFeed
 
 class FeedManager:
     def __init__(self):
@@ -46,3 +47,4 @@ feed_manager.register(RapidFireFeed)
 feed_manager.register(PopularFeed)
 feed_manager.register(HomeRunsTeamFeed)
 feed_manager.register(NoraZoneInteresting)
+feed_manager.register(SevenDirtyWordsFeed)
