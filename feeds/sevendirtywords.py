@@ -34,7 +34,7 @@ class SevenDirtyWordsFeed(BaseFeed):
             return
 
         # https://en.wikipedia.org/wiki/Seven_dirty_words
-        if re.search(r'\b(shit|piss|fuck|cunt|cocksucker|motherfucker|tits)\b', record['text'], re.I) is not None:
+        if re.search(r'^.{0,16}\b(shit|shitting|piss|fuck|fucking|cunt|cocksucker|motherfucker|tits)\b.{0,16}$', record['text'], re.I) is not None:
             repo = commit['did']
             rkey = commit['rkey']
             post_uri = f'at://{repo}/app.bsky.feed.post/{rkey}'
