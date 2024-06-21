@@ -6,7 +6,7 @@ import apsw.ext
 
 from . import BaseFeed
 
-SDW_REGEX = re.compile(r'^(shit|piss|fuck|cunt|cocksucker|motherfucker|tits)\W*$', re.I|re.A)
+SDW_REGEX = re.compile(r'^(shit|piss|fuck|cunt|cocksucker|motherfucker|tits)[!,./;?~ ]*$', re.I|re.A)
 
 class SevenDirtyWordsFeed(BaseFeed):
     FEED_URI = 'at://did:plc:4nsduwlpivpuur4mqkbfvm6a/app.bsky.feed.generator/sdw'
