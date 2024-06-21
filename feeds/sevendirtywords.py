@@ -6,6 +6,7 @@ import apsw.ext
 
 from . import BaseFeed
 
+# https://en.wikipedia.org/wiki/Seven_dirty_words
 SDW_REGEX = re.compile(r'^(shit|piss|fuck|cunt|cocksucker|motherfucker|tits)[!,./;?~ ]*$', re.I|re.A)
 
 class SevenDirtyWordsFeed(BaseFeed):
@@ -35,20 +36,25 @@ class SevenDirtyWordsFeed(BaseFeed):
         if record is None:
             return
 
-        if record.get('reply') is not None:
+        conds = [
+            record.get('reply') is None,
+            record.get('embed') is None,
+            record.get('facets') is None,
+            SDW_REGEX.search(record['text']) is not None,
+        ]
+
+        if not all(conds):
             return
 
-        # https://en.wikipedia.org/wiki/Seven_dirty_words
-        if SDW_REGEX.search(record['text']) is not None:
-            repo = commit['did']
-            rkey = commit['rkey']
-            post_uri = f'at://{repo}/app.bsky.feed.post/{rkey}'
-            ts = self.safe_timestamp(record.get('createdAt')).timestamp()
-            self.transaction_begin(self.db_cnx)
-            self.db_cnx.execute(
-                'insert into posts (uri, create_ts) values (:uri, :ts)',
-                dict(uri=post_uri, ts=ts)
-            )
+        repo = commit['did']
+        rkey = commit['rkey']
+        post_uri = f'at://{repo}/app.bsky.feed.post/{rkey}'
+        ts = self.safe_timestamp(record.get('createdAt')).timestamp()
+        self.transaction_begin(self.db_cnx)
+        self.db_cnx.execute(
+            'insert into posts (uri, create_ts) values (:uri, :ts)',
+            dict(uri=post_uri, ts=ts)
+        )
 
     def commit_changes(self):
         self.logger.debug('committing changes')
