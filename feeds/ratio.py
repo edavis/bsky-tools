@@ -17,7 +17,7 @@ class RatioFeed(BaseFeed):
         quoteposts,
         likes,
         reposts,
-        ( replies + quoteposts ) / ( likes + reposts ) as ratio,
+        ( replies + quoteposts ) / ( likes + reposts + 1 ) as ratio,
         exp( -1 * ( ( unixepoch('now') - create_ts ) / ( 3600.0 * 16 ) ) ) as decay
       from posts
     )
