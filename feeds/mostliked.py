@@ -11,7 +11,7 @@ class MostLikedFeed(BaseFeed):
     select uri, create_ts, unixepoch('now', '-24 hours'), create_ts - unixepoch('now', '-24 hours'), likes
     from posts
     where create_ts >= unixepoch('now', '-24 hours')
-    order by likes desc, uri asc
+    order by likes desc, create_ts desc
     limit :limit offset :offset
     """
     DELETE_OLD_POSTS_QUERY = """
