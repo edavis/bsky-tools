@@ -7,6 +7,7 @@ from feeds.homeruns import HomeRunsTeamFeed
 from feeds.norazone_interesting import NoraZoneInteresting
 from feeds.sevendirtywords import SevenDirtyWordsFeed
 from feeds.ratio import RatioFeed
+from feeds.mostliked import MostLikedFeed
 
 class FeedManager:
     def __init__(self):
