@@ -64,8 +64,8 @@ class MostLikedFeed(BaseFeed):
         self.logger.debug('deleted {} old posts'.format(self.db_cnx.changes()))
 
     def commit_changes(self):
-        self.logger.debug('committing changes')
         self.delete_old_posts()
+        self.logger.debug('committing changes')
         self.transaction_commit(self.db_cnx)
         self.wal_checkpoint(self.db_cnx, 'RESTART')
 
