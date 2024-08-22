@@ -18,6 +18,7 @@ app_bsky_allowlist = set([
     'app.bsky.feed.generator',
     'app.bsky.feed.like',
     'app.bsky.feed.post',
+    'app.bsky.feed.postgate',
     'app.bsky.feed.repost',
     'app.bsky.feed.threadgate',
     'app.bsky.graph.block',
@@ -25,9 +26,9 @@ app_bsky_allowlist = set([
     'app.bsky.graph.list',
     'app.bsky.graph.listblock',
     'app.bsky.graph.listitem',
+    'app.bsky.graph.starterpack',
     'app.bsky.labeler.service',
     'chat.bsky.actor.declaration',
-    'app.bsky.graph.starterpack',
 ])
 
 async def bsky_activity():
