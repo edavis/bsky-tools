@@ -9,6 +9,7 @@ from feeds.sevendirtywords import SevenDirtyWordsFeed
 from feeds.ratio import RatioFeed
 from feeds.mostliked import MostLikedFeed
 from feeds.outlinetags import OutlineTagsFeed
+from feeds.popqp import PopularQuotePostsFeed
 
 class FeedManager:
     def __init__(self):
@@ -54,3 +55,4 @@ feed_manager.register(SevenDirtyWordsFeed)
 # feed_manager.register(RatioFeed)
 feed_manager.register(MostLikedFeed)
 # feed_manager.register(OutlineTagsFeed)
+feed_manager.register(PopularQuotePostsFeed)
