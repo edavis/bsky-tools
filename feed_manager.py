@@ -46,7 +46,7 @@ class FeedManager:
             feed.commit_changes()
 
 feed_manager = FeedManager()
-# feed_manager.register(RapidFireFeed)
+feed_manager.register(RapidFireFeed)
 feed_manager.register(PopularFeed)
 feed_manager.register(HomeRunsTeamFeed)
 feed_manager.register(NoraZoneInteresting)
