@@ -47,7 +47,7 @@ class FeedManager:
 
 feed_manager = FeedManager()
 # feed_manager.register(RapidFireFeed)
-# feed_manager.register(PopularFeed)
+feed_manager.register(PopularFeed)
 feed_manager.register(HomeRunsTeamFeed)
 feed_manager.register(NoraZoneInteresting)
 feed_manager.register(SevenDirtyWordsFeed)
