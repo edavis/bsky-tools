@@ -43,11 +43,11 @@ def get_feed_skeleton():
 
     posts = feed_manager.serve_feed(feed_uri, limit, offset, langs, debug=False)
 
-    if len(posts) == limit:
+    if len(posts) < limit:
+        return dict(feed=[dict(post=uri) for uri in posts])
+    else:
         offset += len(posts)
         return dict(cursor=str(offset), feed=[dict(post=uri) for uri in posts])
-    else:
-        return dict(feed=[dict(post=uri) for uri in posts])
 
 app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
     '/metrics': make_wsgi_app()
