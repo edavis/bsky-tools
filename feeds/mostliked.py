@@ -36,28 +36,7 @@ class MostLikedFeed(BaseFeed):
         self.logger = logging.getLogger('feeds.mostliked')
 
     def process_commit(self, commit):
-        if commit['opType'] != 'c':
-            return
-
-        if commit['collection'] != 'app.bsky.feed.like':
-            return
-
-        record = commit.get('record')
-        ts = self.safe_timestamp(record.get('createdAt')).timestamp()
-        try:
-            uri = record['subject']['uri']
-        except KeyError:
-            return
-
-        self.transaction_begin(self.db_cnx)
-
-        self.db_cnx.execute("""
-        insert into posts (uri, create_ts, likes)
-        values (:uri, :ts, 1)
-        on conflict(uri)
-        do update set
-          likes = likes + 1
-        """, dict(uri=uri, ts=ts))
+        return
 
     def delete_old_posts(self):
         self.db_cnx.execute(self.DELETE_OLD_POSTS_QUERY)
@@ -70,12 +49,9 @@ class MostLikedFeed(BaseFeed):
         self.wal_checkpoint(self.db_cnx, 'RESTART')
 
     def serve_feed(self, limit, offset, langs):
-        cur = self.db_cnx.execute(self.SERVE_FEED_QUERY, dict(limit=limit, offset=offset))
-        return [row[0] for row in cur]
+        return [
+            'at://did:plc:4nsduwlpivpuur4mqkbfvm6a/app.bsky.feed.post/3l3cgg5vbc72i'
+        ]
 
     def serve_feed_debug(self, limit, offset, langs):
-        bindings = dict(limit=limit, offset=offset)
-        return apsw.ext.format_query_table(
-            self.db_cnx, self.SERVE_FEED_QUERY, bindings,
-            string_sanitize=2, text_width=9999, use_unicode=True
-        )
+        pass
