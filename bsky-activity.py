@@ -81,6 +81,12 @@ async def main():
             {'did': repo_did, 'ts': repo_update_time.timestamp()}
         )
 
+        if collection == 'app.bsky.feed.post':
+            embed = payload['record'].get('embed')
+            if embed is not None and embed.get('$type', ''):
+                embed_type = embed['$type']
+                redis_pipe.incr(f'app.bsky.feed.post:embed:{embed_type}')
+
         redis_pipe \
             .incr(collection) \
             .incr('dev.edavis.muninsky.ops')
