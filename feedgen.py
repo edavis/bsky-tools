@@ -10,7 +10,6 @@ import dag_cbor
 import websockets
 
 from feed_manager import feed_manager
-from firehose_manager import FirehoseManager
 
 logging.basicConfig(
     format='%(asctime)s - %(levelname)-5s - %(name)-20s - %(message)s',
@@ -20,7 +19,7 @@ logging.getLogger('').setLevel(logging.WARNING)
 logging.getLogger('feeds').setLevel(logging.DEBUG)
 logging.getLogger('firehose').setLevel(logging.DEBUG)
 
-async def firehose_events(firehose_manager):
+async def firehose_events():
     relay_url = 'ws://localhost:6008/subscribe'
 
     logger = logging.getLogger('feeds.events')
@@ -32,15 +31,13 @@ async def firehose_events(firehose_manager):
             yield json.load(payload)
 
 async def main():
-    firehose_manager = FirehoseManager()
     event_count = 0
 
-    async for commit in firehose_events(firehose_manager):
+    async for commit in firehose_events():
         feed_manager.process_commit(commit)
         event_count += 1
         if event_count % 2500 == 0:
             feed_manager.commit_changes()
-            firehose_manager.set_sequence_number(commit['seq'])
 
 if __name__ == '__main__':
     asyncio.run(main())
