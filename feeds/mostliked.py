@@ -53,7 +53,7 @@ class MostLikedFeed(BaseFeed):
     """
 
     def __init__(self):
-        self.db_cnx = apsw.Connection('db/mostliked.db')
+        self.db_cnx = apsw.Connection('/dev/shm/mostliked.db')
         self.db_cnx.pragma('foreign_keys', True)
         self.db_cnx.pragma('journal_mode', 'WAL')
         self.db_cnx.pragma('wal_autocheckpoint', '0')
@@ -76,7 +76,7 @@ class MostLikedFeed(BaseFeed):
         self.logger = logging.getLogger('feeds.mostliked')
 
         self.db_writes = queue.Queue()
-        db_worker = DatabaseWorker('mostliked', 'db/mostliked.db', self.db_writes)
+        db_worker = DatabaseWorker('mostliked', '/dev/shm/mostliked.db', self.db_writes)
         db_worker.start()
 
     def process_commit(self, commit):
@@ -105,6 +105,10 @@ class MostLikedFeed(BaseFeed):
             try:
                 subject_uri = record['subject']['uri']
             except KeyError:
+                return
+
+            subject_exists = self.db_cnx.execute('select 1 from posts where uri = ?', [subject_uri])
+            if subject_exists.fetchone() is None:
                 return
 
             task = (
