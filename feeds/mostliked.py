@@ -145,7 +145,7 @@ class MostLikedFeed(BaseFeed):
     def generate_sql(self, limit, offset, langs):
         bindings = []
         sql = """
-        select posts.uri, create_ts, create_ts - unixepoch('now', '-15 minutes') as rem, likes, lang
+        select posts.uri, create_ts, create_ts - unixepoch('now', '-24 hours') as ttl, likes, lang
         from posts
         left join langs on posts.uri = langs.uri
         where
