@@ -18,10 +18,13 @@ def get_feed_skeleton():
     except ValueError:
         limit = 50
 
-    try:
-        offset = int(request.args.get('cursor', 0))
-    except ValueError:
-        offset = 0
+    if 'nz-interesting' in request.args['feed']:
+        offset = request.args.get('cursor')
+    else:
+        try:
+            offset = int(request.args.get('cursor', 0))
+        except ValueError:
+            offset = 0
 
     feed_uri = request.args['feed']
     if feed_uri.endswith('-dev'):
@@ -42,6 +45,8 @@ def get_feed_skeleton():
         return debug, headers
 
     posts = feed_manager.serve_feed(feed_uri, limit, offset, langs, debug=False)
+    if isinstance(posts, dict):
+        return posts
 
     if len(posts) < limit:
         return dict(feed=[dict(post=uri) for uri in posts])

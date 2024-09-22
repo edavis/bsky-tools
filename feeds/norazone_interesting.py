@@ -1,5 +1,6 @@
 import logging
 
+from atproto import Client, models
 import apsw
 import apsw.ext
 
@@ -12,66 +13,23 @@ class NoraZoneInteresting(BaseFeed):
     FEED_URI = 'at://did:plc:4nsduwlpivpuur4mqkbfvm6a/app.bsky.feed.generator/nz-interesting'
 
     def __init__(self):
-        self.db_cnx = apsw.Connection('db/nz-interesting.db')
-        self.db_cnx.pragma('journal_mode', 'WAL')
-        self.db_cnx.pragma('wal_autocheckpoint', '0')
-
-        with self.db_cnx:
-            self.db_cnx.execute("""
-            create table if not exists posts (uri text, create_ts timestamp);
-            create index if not exists create_ts_idx on posts(create_ts);
-            """)
-
-        self.logger = logging.getLogger('feeds.nz_interesting')
+        self.client = Client('https://public.api.bsky.app')
 
     def process_commit(self, commit):
-        if commit['opType'] != 'c':
-            return
-
-        if commit['collection'] != 'app.bsky.feed.post':
-            return
-
-        record = commit.get('record')
-        if record is None:
-            return
-
-        embed = record.get('embed')
-        if embed is None:
-            return
-
-        inner_record = embed.get('record')
-        if inner_record is None:
-            return
-
-        if inner_record.get('uri') == TARGET_QUOTE_URI:
-            self.transaction_begin(self.db_cnx)
-            self.logger.debug('found quote post of target, adding to feed')
-            uri = 'at://{repo}/app.bsky.feed.post/{rkey}'.format(
-                repo = commit['did'],
-                rkey = commit['rkey']
-            )
-            ts = self.safe_timestamp(record.get('createdAt')).timestamp()
-            self.db_cnx.execute(
-                'insert into posts (uri, create_ts) values (:uri, :ts)',
-                dict(uri=uri, ts=ts)
-            )
+        pass
 
     def commit_changes(self):
-        self.logger.debug('committing changes')
-        self.transaction_commit(self.db_cnx)
-        self.wal_checkpoint(self.db_cnx, 'RESTART')
+        pass
 
-    def serve_feed(self, limit, offset, langs):
-        cur = self.db_cnx.execute(
-            'select uri from posts order by create_ts desc limit :limit offset :offset',
-            dict(limit=limit, offset=offset)
+    def serve_feed(self, limit, cursor, langs):
+        quotes = self.client.app.bsky.feed.get_quotes(
+            models.AppBskyFeedGetQuotes.Params(
+                uri = TARGET_QUOTE_URI,
+                limit = limit,
+                cursor = cursor,
+            )
         )
-        return [uri for (uri,) in cur]
-
-    def serve_feed_debug(self, limit, offset, langs):
-        query = 'select * from posts order by create_ts desc limit :limit offset :offset'
-        bindings = dict(limit=limit, offset=offset)
-        return apsw.ext.format_query_table(
-            self.db_cnx, query, bindings,
-            string_sanitize=2, text_width=9999, use_unicode=True
-        )
+        return {
+            'cursor': quotes.cursor,
+            'feed': [dict(post=post.uri) for post in quotes.posts],
+        }
