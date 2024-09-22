@@ -9,80 +9,48 @@ class PopularFeed(BaseFeed):
     FEED_URI = 'at://did:plc:4nsduwlpivpuur4mqkbfvm6a/app.bsky.feed.generator/popular'
 
     def __init__(self):
-        self.db_cnx = apsw.Connection('db/popular.db')
+        # use the posts from the most-liked feed for this
+        self.db_cnx = apsw.Connection('db/mostliked.db')
+        self.db_cnx.pragma('foreign_keys', True)
         self.db_cnx.pragma('journal_mode', 'WAL')
-        self.db_cnx.pragma('wal_autocheckpoint', '0')
-
-        with self.db_cnx:
-            self.db_cnx.execute("""
-            create table if not exists posts (uri text, create_ts timestamp, update_ts timestamp, temperature int);
-            create unique index if not exists uri_idx on posts(uri);
-            """)
-
-        self.logger = logging.getLogger('feeds.popular')
 
     def process_commit(self, commit):
-        if commit['opType'] != 'c':
-            return
-
-        if commit['collection'] != 'app.bsky.feed.like':
-            return
-
-        record = commit.get('record')
-        if record is None:
-            return
-
-        ts = self.safe_timestamp(record.get('createdAt')).timestamp()
-        like_subject_uri = record['subject']['uri']
-
-        self.transaction_begin(self.db_cnx)
-
-        self.db_cnx.execute("""
-        insert into posts (uri, create_ts, update_ts, temperature)
-        values (:uri, :ts, :ts, 1)
-        on conflict (uri) do update set temperature = temperature + 1, update_ts = :ts
-        """, dict(uri=like_subject_uri, ts=ts))
-
-    def delete_old_posts(self):
-        self.db_cnx.execute("""
-        delete from posts
-        where
-            temperature * exp( -1 * ( ( unixepoch('now') - create_ts ) / 1800.0 ) ) < 1.0
-            and create_ts < unixepoch('now', '-15 minutes')
-        """)
-        self.logger.debug('deleted {} old posts'.format(self.db_cnx.changes()))
+        pass
 
     def commit_changes(self):
-        self.delete_old_posts()
-        self.logger.debug('committing changes')
-        self.transaction_commit(self.db_cnx)
-        self.wal_checkpoint(self.db_cnx, 'RESTART')
+        pass
+
+    def generate_sql(self, limit, offset, langs):
+        bindings = []
+        sql = """
+        select posts.uri, create_ts, likes, lang, unixepoch('now') - create_ts as age_seconds,
+        exp( -1 * ( ( unixepoch('now') - create_ts ) / 1800.0 ) ) as decay,
+        likes * exp( -1 * ( ( unixepoch('now') - create_ts ) / 1800.0 ) ) as score
+        from posts
+        left join langs on posts.uri = langs.uri
+        where
+        """
+        if not '*' in langs:
+            lang_values = list(langs.values())
+            bindings.extend(lang_values)
+            sql += " OR ".join(['lang = ?'] * len(lang_values))
+        else:
+            sql += " 1=1 "
+        sql += """
+        order by score desc
+        limit ? offset ?
+        """
+        bindings.extend([limit, offset])
+        return sql, bindings
 
     def serve_feed(self, limit, offset, langs):
-        cur = self.db_cnx.execute("""
-        select uri from posts
-        order by temperature * exp( -1 * ( ( unixepoch('now') - create_ts ) / 1800.0 ) )
-        desc limit :limit offset :offset
-        """, dict(limit=limit, offset=offset))
-        return [uri for (uri,) in cur]
+        sql, bindings = self.generate_sql(limit, offset, langs)
+        cur = self.db_cnx.execute(sql, bindings)
+        return [row[0] for row in cur]
 
     def serve_feed_debug(self, limit, offset, langs):
-        query = """
-        select
-            uri, temperature,
-            unixepoch('now') - create_ts as age_seconds,
-            exp(
-              -1 * ( ( unixepoch('now') - create_ts ) / 1800.0 )
-            ) as decay,
-            temperature * exp(
-              -1 * ( ( unixepoch('now') - create_ts ) / 1800.0 )
-            ) as score
-        from posts
-        order by score desc
-        limit :limit offset :offset
-        """
-        bindings = dict(limit=limit, offset=offset)
+        sql, bindings = self.generate_sql(limit, offset, langs)
         return apsw.ext.format_query_table(
-            self.db_cnx, query, bindings,
+            self.db_cnx, sql, bindings,
             string_sanitize=2, text_width=9999, use_unicode=True
         )
