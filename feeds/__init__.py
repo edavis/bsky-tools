@@ -62,4 +62,4 @@ class BaseFeed:
             db.execute('COMMIT')
 
     def wal_checkpoint(self, db, mode='PASSIVE'):
-        db.pragma(f'wal_checkpoint({mode})')
+        return db.execute(f'PRAGMA wal_checkpoint({mode})')
