@@ -45,6 +45,13 @@ class FeedManager:
         for feed in self.feeds.values():
             feed.commit_changes()
 
+    def stop_all(self):
+        for feed in self.feeds.values():
+            try:
+                feed.stop_db_worker()
+            except AttributeError:
+                pass
+
 feed_manager = FeedManager()
 feed_manager.register(RapidFireFeed)
 feed_manager.register(PopularFeed)

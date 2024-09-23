@@ -4,6 +4,7 @@ import asyncio
 from io import BytesIO
 import json
 import logging
+import signal
 
 from atproto import CAR
 import dag_cbor
@@ -18,6 +19,9 @@ logging.basicConfig(
 logging.getLogger('').setLevel(logging.WARNING)
 logging.getLogger('feeds').setLevel(logging.DEBUG)
 logging.getLogger('firehose').setLevel(logging.DEBUG)
+logging.getLogger('feedgen').setLevel(logging.DEBUG)
+
+logger = logging.getLogger('feedgen')
 
 async def firehose_events():
     relay_url = 'ws://localhost:6008/subscribe'
@@ -39,5 +43,26 @@ async def main():
         if event_count % 2500 == 0:
             feed_manager.commit_changes()
 
+async def shutdown(signal, loop):
+    logger.info(f'received exit signal {signal.name}')
+    feed_manager.stop_all()
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    [task.cancel() for task in tasks]
+    logger.info(f'cancelling {len(tasks)} outstanding tasks')
+    await asyncio.gather(*tasks, return_exceptions=True)
+    loop.stop()
+
 if __name__ == '__main__':
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    catch_signals = (signal.SIGTERM, signal.SIGINT)
+    for sig in catch_signals:
+        loop.add_signal_handler(
+            sig,
+            lambda s=sig: asyncio.create_task(shutdown(s, loop))
+        )
+
+    try:
+        loop.create_task(main())
+        loop.run_forever()
+    finally:
+        loop.close()

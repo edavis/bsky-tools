@@ -24,10 +24,11 @@ class DatabaseWorker(threading.Thread):
         self.changes = 0
 
     def run(self):
-        while not self.stop_signal:
+        while True:
             task = self.task_queue.get(block=True)
             if task == 'STOP':
-                self.stop_signal = True
+                self.logger.debug('received STOP, breaking now')
+                break
             elif task == 'COMMIT':
                 self.logger.debug(f'committing {self.changes} changes')
                 if self.db_cnx.in_transaction:
@@ -43,6 +44,8 @@ class DatabaseWorker(threading.Thread):
                 self.db_cnx.execute(sql, bindings)
                 self.changes += self.db_cnx.changes()
             self.task_queue.task_done()
+
+        self.logger.debug('closing database connection')
         self.db_cnx.close()
 
     def stop(self):
@@ -79,8 +82,12 @@ class MostLikedFeed(BaseFeed):
         self.drafts = ExpiringDict(max_len=50_000, max_age_seconds=5*60)
 
         self.db_writes = queue.Queue()
-        db_worker = DatabaseWorker('mostliked', 'db/mostliked.db', self.db_writes)
-        db_worker.start()
+        self.db_worker = DatabaseWorker('mostliked', 'db/mostliked.db', self.db_writes)
+        self.db_worker.start()
+
+    def stop_db_worker(self):
+        self.logger.debug('sending STOP')
+        self.db_writes.put('STOP')
 
     def process_commit(self, commit):
         if commit['opType'] != 'c':
