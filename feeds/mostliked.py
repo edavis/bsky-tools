@@ -54,7 +54,7 @@ class DatabaseWorker(threading.Thread):
 class MostLikedFeed(BaseFeed):
     FEED_URI = 'at://did:plc:4nsduwlpivpuur4mqkbfvm6a/app.bsky.feed.generator/most-liked'
     DELETE_OLD_POSTS_QUERY = """
-    delete from posts where create_ts < unixepoch('now', '-24 hours');
+    delete from posts where create_ts < unixepoch('now', '-23 hours');
     """
 
     def __init__(self):
