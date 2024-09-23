@@ -40,7 +40,7 @@ class SevenDirtyWordsFeed(BaseFeed):
             record.get('reply') is None,
             record.get('embed') is None,
             record.get('facets') is None,
-            SDW_REGEX.search(record['text']) is not None,
+            SDW_REGEX.search(record.get('text', '')) is not None,
         ]
 
         if not all(conds):
