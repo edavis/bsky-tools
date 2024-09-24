@@ -43,8 +43,15 @@ async def main():
         if event_count % 2500 == 0:
             feed_manager.commit_changes()
 
-async def shutdown(signal, loop):
-    logger.info(f'received exit signal {signal.name}')
+def handle_exception(loop, context):
+    msg = context.get("exception", context["message"])
+    logger.error(f"Caught exception: {msg}")
+    logger.info("Shutting down...")
+    asyncio.create_task(shutdown(loop))
+
+async def shutdown(loop, signal=None):
+    if signal:
+        logger.info(f'received exit signal {signal.name}')
     feed_manager.stop_all()
     tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
     [task.cancel() for task in tasks]
@@ -58,8 +65,9 @@ if __name__ == '__main__':
     for sig in catch_signals:
         loop.add_signal_handler(
             sig,
-            lambda s=sig: asyncio.create_task(shutdown(s, loop))
+            lambda s=sig: asyncio.create_task(shutdown(loop, signal=s))
         )
+    loop.set_exception_handler(handle_exception)
 
     try:
         loop.create_task(main())
