@@ -65,7 +65,10 @@ async def main():
         if event['type'] != 'com':
             continue
 
-        payload = event['commit']
+        payload = event.get('commit')
+        if payload is None:
+            continue
+
         if payload['type'] != 'c':
             continue
 
