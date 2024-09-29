@@ -2,15 +2,12 @@
 
 import asyncio
 from datetime import datetime, timezone
-from io import BytesIO
 import json
 import os
 import sqlite3
 import sys
 
-from atproto import CAR
 import redis
-import dag_cbor
 import websockets
 
 app_bsky_allowlist = set([
@@ -39,9 +36,7 @@ async def bsky_activity():
 
     async with websockets.connect(relay_url, ping_timeout=60) as firehose:
         while True:
-            payload = BytesIO(await firehose.recv())
-
-            yield json.load(payload)
+            yield json.loads(await firehose.recv())
 
 async def main():
     redis_cnx = redis.Redis()
@@ -66,15 +61,19 @@ async def main():
     sys.stdout.flush()
 
     op_count = 0
-    async for payload in bsky_activity():
-        if payload['opType'] != 'c':
+    async for event in bsky_activity():
+        if event['type'] != 'com':
+            continue
+
+        payload = event['commit']
+        if payload['type'] != 'c':
             continue
 
         collection = payload['collection']
         if collection not in app_bsky_allowlist:
             continue
 
-        repo_did = payload['did']
+        repo_did = event['did']
         repo_update_time = datetime.now(timezone.utc)
         db_cnx.execute(
             'insert into users values (:did, :ts) on conflict (did) do update set ts = :ts',
@@ -93,12 +92,10 @@ async def main():
 
         op_count += 1
         if op_count % 500 == 0:
-            now = datetime.now(timezone.utc)
-            payload_seq = payload['seq']
-            payload_lag = now - repo_update_time
-
-            sys.stdout.write(f'seq: {payload_seq}, lag: {payload_lag.total_seconds()}\n')
-            redis_pipe.set('dev.edavis.muninsky.seq', payload_seq)
+            current_time_ms = datetime.now(timezone.utc).timestamp()
+            event_time_ms = event['time_us'] / 1_000_000
+            current_lag = current_time_ms - event_time_ms
+            sys.stdout.write(f'lag: {current_lag:.2f}\n')
             redis_pipe.execute()
             db_cnx.commit()
             sys.stdout.flush()
