@@ -28,6 +28,10 @@ app_bsky_allowlist = set([
     'chat.bsky.actor.declaration',
 ])
 
+other_allowlist = set([
+    'social.psky.feed.post',
+])
+
 async def bsky_activity():
     relay_url = 'ws://localhost:6008/subscribe'
 
@@ -73,7 +77,7 @@ async def main():
             continue
 
         collection = payload['collection']
-        if collection not in app_bsky_allowlist:
+        if collection not in app_bsky_allowlist | other_allowlist:
             continue
 
         repo_did = event['did']
