@@ -30,6 +30,7 @@ app_bsky_allowlist = set([
 
 other_allowlist = set([
     'social.psky.feed.post',
+    'social.psky.actor.profile',
 ])
 
 async def bsky_activity():
