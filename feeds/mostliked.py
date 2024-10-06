@@ -21,12 +21,12 @@ class MostLikedFeed(BaseFeed):
         left join langs on posts.uri = langs.uri
         where
         """
-        if not '*' in langs:
+        if not langs:
+            sql += " 1=1 "
+        else:
             lang_values = list(langs.values())
             bindings.extend(lang_values)
             sql += " OR ".join(['lang = ?'] * len(lang_values))
-        else:
-            sql += " 1=1 "
         sql += """
         order by likes desc, create_ts desc
         limit ? offset ?
