@@ -43,4 +43,4 @@ while True:
     redis_pipe.set('dev.edavis.muninsky.plc_latest', after.isoformat())
     redis_pipe.execute()
 
-    time.sleep(60)
+    time.sleep(5)
