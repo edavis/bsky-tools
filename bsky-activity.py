@@ -31,6 +31,7 @@ app_bsky_allowlist = set([
 other_allowlist = set([
     'social.psky.feed.post',
     'social.psky.chat.message',
+    'blue.zio.atfile.upload',
 ])
 
 async def bsky_activity():
