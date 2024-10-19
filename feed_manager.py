@@ -2,7 +2,6 @@ from fnmatch import fnmatchcase
 
 from feeds.battle import BattleFeed
 from feeds.rapidfire import RapidFireFeed
-from feeds.popular import PopularFeed
 from feeds.homeruns import HomeRunsTeamFeed
 from feeds.norazone_interesting import NoraZoneInteresting
 from feeds.sevendirtywords import SevenDirtyWordsFeed
@@ -52,4 +51,3 @@ class FeedManager:
                 pass
 
 feed_manager = FeedManager()
-feed_manager.register(PopularFeed)
