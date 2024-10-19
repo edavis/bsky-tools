@@ -7,7 +7,6 @@ from feeds.homeruns import HomeRunsTeamFeed
 from feeds.norazone_interesting import NoraZoneInteresting
 from feeds.sevendirtywords import SevenDirtyWordsFeed
 from feeds.ratio import RatioFeed
-from feeds.mostliked import MostLikedFeed
 from feeds.outlinetags import OutlineTagsFeed
 from feeds.popqp import PopularQuotePostsFeed
 
@@ -54,4 +53,3 @@ class FeedManager:
 
 feed_manager = FeedManager()
 feed_manager.register(PopularFeed)
-feed_manager.register(MostLikedFeed)
