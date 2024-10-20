@@ -1,0 +1,16 @@
+[Unit]
+Description=bsky langs
+After=network.target syslog.target
+
+[Service]
+Type=simple
+User=eric
+WorkingDirectory=/home/eric/bsky-tools
+ExecStart=/home/eric/bsky-tools/bin/bsky-langs
+TimeoutSec=15
+Restart=always
+RestartSec=30
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target
