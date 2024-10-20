@@ -68,14 +68,14 @@ async def main():
 
     op_count = 0
     async for event in bsky_activity():
-        if event['type'] != 'com':
+        if event['kind'] != 'commit':
             continue
 
         payload = event.get('commit')
         if payload is None:
             continue
 
-        if payload['type'] != 'c':
+        if payload['operation'] != 'create':
             continue
 
         collection = payload['collection']
