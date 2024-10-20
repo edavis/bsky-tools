@@ -20,6 +20,8 @@ func processPosts(ctx context.Context, events <-chan []byte) {
 		lingua.German,
 		lingua.French,
 		lingua.Spanish,
+		lingua.Korean,
+		lingua.Thai,
 	}
 	detector := lingua.
 		NewLanguageDetectorBuilder().
