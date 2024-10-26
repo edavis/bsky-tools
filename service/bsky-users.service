@@ -1,0 +1,16 @@
+[Unit]
+Description=bsky users
+After=network.target syslog.target
+
+[Service]
+Type=simple
+User=eric
+WorkingDirectory=/home/eric/bsky-tools
+ExecStart=/home/eric/bsky-tools/bin/bsky-users
+TimeoutSec=10
+Restart=always
+RestartSec=5
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

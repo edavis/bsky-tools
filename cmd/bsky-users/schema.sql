@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS users (did TEXT, ts TIMESTAMP);
+CREATE UNIQUE INDEX IF NOT EXISTS did_idx on users(did);
+CREATE INDEX IF NOT EXISTS ts_idx on users(ts);

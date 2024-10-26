@@ -6,6 +6,7 @@ require (
 	github.com/bluesky-social/indigo v0.0.0-20240905024844-a4f38639767f
 	github.com/bluesky-social/jetstream v0.0.0-20241020000921-dcd43344c716
 	github.com/gorilla/websocket v1.5.1
+	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/pemistahl/lingua-go v1.4.0
 	github.com/redis/go-redis/v9 v9.3.0
 )
