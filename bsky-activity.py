@@ -48,21 +48,6 @@ async def main():
     redis_cnx = redis.Redis()
     redis_pipe = redis_cnx.pipeline()
 
-    if os.path.exists('/opt/muninsky/users.db'):
-        db_fname = '/opt/muninsky/users.db'
-    else:
-        db_fname = 'users.db'
-
-    db_cnx = sqlite3.connect(db_fname)
-    with db_cnx:
-        db_cnx.executescript("""
-        PRAGMA journal_mode = WAL;
-        PRAGMA synchronous = off;
-        CREATE TABLE IF NOT EXISTS users (did TEXT, ts TIMESTAMP);
-        CREATE UNIQUE INDEX IF NOT EXISTS did_idx on users(did);
-        CREATE INDEX IF NOT EXISTS ts_idx on users(ts);
-        """)
-
     sys.stdout.write('starting up\n')
     sys.stdout.flush()
 
@@ -84,10 +69,6 @@ async def main():
 
         repo_did = event['did']
         repo_update_time = datetime.now(timezone.utc)
-        db_cnx.execute(
-            'insert into users values (:did, :ts) on conflict (did) do update set ts = :ts',
-            {'did': repo_did, 'ts': repo_update_time.timestamp()}
-        )
 
         if collection == 'app.bsky.feed.post':
             embed = payload['record'].get('embed')
@@ -106,7 +87,6 @@ async def main():
             current_lag = current_time_ms - event_time_ms
             sys.stdout.write(f'lag: {current_lag:.2f}\n')
             redis_pipe.execute()
-            db_cnx.commit()
             sys.stdout.flush()
 
 if __name__ == '__main__':
