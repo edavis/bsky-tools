@@ -7,7 +7,6 @@ Type=simple
 User=eric
 WorkingDirectory=/home/eric/bsky-tools
 ExecStart=/home/eric/bsky-tools/bin/bsky-users
-ProtectHome=false
 TimeoutSec=10
 Restart=always
 RestartSec=5
