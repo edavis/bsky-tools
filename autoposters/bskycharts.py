@@ -12,7 +12,7 @@ BSKY_ACTIVITY_IMAGE_URL = 'https://bskycharts.edavis.dev/munin-cgi/munin-cgi-gra
 
 
 def main():
-    client = atproto.Client()
+    client = atproto.Client('https://pds.merklehost.xyz')
     client.login(BSKY_HANDLE, BSKY_APP_PASSWORD)
 
     resp = requests.get(BSKY_ACTIVITY_IMAGE_URL)
