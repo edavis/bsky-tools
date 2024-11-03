@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const JetstreamUrl = `ws://localhost:6008/subscribe?wantedCollections=app.bsky.feed.post`
+const JetstreamUrl = `wss://jetstream1.us-west.bsky.network/subscribe?wantedCollections=app.bsky.feed.post`
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)

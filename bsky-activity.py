@@ -35,7 +35,7 @@ other_allowlist = set([
 ])
 
 async def bsky_activity():
-    relay_url = 'ws://localhost:6008/subscribe'
+    relay_url = 'wss://jetstream1.us-west.bsky.network/subscribe'
 
     sys.stdout.write(f'opening websocket connection to {relay_url}\n')
     sys.stdout.flush()

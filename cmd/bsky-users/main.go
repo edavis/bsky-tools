@@ -39,9 +39,7 @@ var AppBskyAllowlist = map[string]bool{
 	"chat.bsky.actor.declaration": true,
 }
 
-// const JetstreamUrl = `wss://jetstream1.us-west.bsky.network/subscribe`
-
-const JetstreamUrl = `ws://localhost:6008/subscribe` // TODO(ejd): attach a reconnect cursor
+const JetstreamUrl = `wss://jetstream1.us-west.bsky.network/subscribe` // TODO(ejd): attach a reconnect cursor
 
 const userTimestampUpdate = `insert into users (did, ts) values (?, ?) on conflict (did) do update set ts = ?`
 
