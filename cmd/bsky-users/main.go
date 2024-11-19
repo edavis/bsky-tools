@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
-	"encoding/json"
 	"log"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -19,6 +19,45 @@ type CheckpointResults struct {
 	Blocked     int
 	Pages       int
 	Transferred int
+}
+
+type Queue struct {
+	lk     sync.Mutex
+	events []jetstream.Event
+}
+
+func NewQueue(capacity int) *Queue {
+	return &Queue{
+		events: make([]jetstream.Event, 0, capacity),
+	}
+}
+
+func (q *Queue) Enqueue(event jetstream.Event) {
+	q.lk.Lock()
+	defer q.lk.Unlock()
+
+	q.events = append(q.events, event)
+}
+
+func (q *Queue) Dequeue() (jetstream.Event, bool) {
+	q.lk.Lock()
+	defer q.lk.Unlock()
+
+	if len(q.events) == 0 {
+		var e jetstream.Event
+		return e, false
+	}
+
+	event := q.events[0]
+	q.events = q.events[1:]
+	return event, true
+}
+
+func (q *Queue) Size() int {
+	q.lk.Lock()
+	defer q.lk.Unlock()
+
+	return len(q.events)
 }
 
 var AppBskyAllowlist = map[string]bool{
@@ -46,7 +85,7 @@ const userTimestampUpdate = `insert into users (did, ts) values (?, ?) on confli
 //go:embed schema.sql
 var ddl string
 
-func handler(ctx context.Context, events <-chan []byte, dbCnx *sql.DB) {
+func handler(ctx context.Context, queue *Queue, dbCnx *sql.DB) {
 	if _, err := dbCnx.ExecContext(ctx, ddl); err != nil {
 		log.Printf("could not create tables: %v\n", err)
 	}
@@ -60,17 +99,18 @@ func handler(ctx context.Context, events <-chan []byte, dbCnx *sql.DB) {
 		eventCount int
 	)
 
-	for evt := range events {
+	for {
+		event, ok := queue.Dequeue()
+		if !ok {
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+
 		if dbTx == nil {
 			dbTx, err = dbCnx.BeginTx(ctx, nil)
 			if err != nil {
 				log.Printf("failed to begin transaction: %v\n", err)
 			}
-		}
-
-		var event jetstream.Event
-		if err := json.Unmarshal(evt, &event); err != nil {
-			continue
 		}
 
 		if event.Kind != jetstream.EventKindCommit {
@@ -93,28 +133,34 @@ func handler(ctx context.Context, events <-chan []byte, dbCnx *sql.DB) {
 		dbTx.ExecContext(ctx, userTimestampUpdate, did, ts, ts)
 
 		eventCount += 1
-		if eventCount%1000 == 0 {
-			if err := dbTx.Commit(); err != nil {
-				log.Printf("commit failed: %v\n")
+		if eventCount%2500 == 0 {
+			if err = dbTx.Commit(); err != nil {
+				log.Printf("commit failed: %v\n", err)
+			} else {
+				log.Printf("commit successful\n")
 			}
 
-			var results CheckpointResults
-			err := dbCnx.QueryRowContext(ctx, "PRAGMA wal_checkpoint(RESTART)").Scan(&results.Blocked, &results.Pages, &results.Transferred)
-			switch {
-			case err != nil:
-				log.Printf("failed checkpoint: %v\n", err)
-			case results.Blocked == 1:
-				log.Printf("checkpoint: blocked\n")
-			case results.Pages == results.Transferred:
-				log.Printf("checkpoint: %d pages transferred\n", results.Transferred)
-			case results.Pages != results.Transferred:
-				log.Printf("checkpoint: %d pages, %d transferred\n", results.Pages, results.Transferred)
+			if eventCount%25_000 == 0 {
+				var results CheckpointResults
+				err = dbCnx.QueryRowContext(ctx, "PRAGMA wal_checkpoint(RESTART)").Scan(&results.Blocked, &results.Pages, &results.Transferred)
+				switch {
+				case err != nil:
+					log.Printf("failed checkpoint: %v\n", err)
+				case results.Blocked == 1:
+					log.Printf("checkpoint: blocked\n")
+				case results.Pages == results.Transferred:
+					log.Printf("checkpoint: %d pages transferred\n", results.Transferred)
+				case results.Pages != results.Transferred:
+					log.Printf("checkpoint: %d pages, %d transferred\n", results.Pages, results.Transferred)
+				}
 			}
 
 			dbTx, err = dbCnx.BeginTx(ctx, nil)
 			if err != nil {
 				log.Printf("failed to begin transaction: %v\n", err)
 			}
+
+			log.Printf("queue size: %d\n", queue.Size())
 		}
 	}
 }
@@ -123,7 +169,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	conn, _, err := websocket.DefaultDialer.Dial(JetstreamUrl, nil)
+	conn, _, err := websocket.DefaultDialer.DialContext(ctx, JetstreamUrl, nil)
 	if err != nil {
 		log.Fatalf("failed to open websocket: %v\n", err)
 	}
@@ -149,17 +195,20 @@ func main() {
 		log.Printf("db closed\n")
 	}()
 
-	jetstreamEvents := make(chan []byte)
-	go handler(ctx, jetstreamEvents, dbCnx)
+	queue := NewQueue(100_000)
+	go handler(ctx, queue, dbCnx)
 
 	log.Printf("starting up\n")
 	go func() {
 		for {
-			_, message, err := conn.ReadMessage()
+			var event jetstream.Event
+			err := conn.ReadJSON(&event)
 			if err != nil {
+				log.Printf("ReadJSON error: %v\n", err)
 				stop()
+				break
 			}
-			jetstreamEvents <- message
+			queue.Enqueue(event)
 		}
 	}()
 
