@@ -157,7 +157,9 @@ func handler(ctx context.Context, queue *Queue, dbCnx *sql.DB) {
 			if err != nil {
 				log.Printf("failed to begin transaction: %v\n", err)
 			}
+		}
 
+		if eventCount%2500 == 0 {
 			log.Printf("queue size: %d\n", queue.Size())
 		}
 	}
