@@ -133,26 +133,24 @@ func handler(ctx context.Context, queue *Queue, dbCnx *sql.DB) {
 		dbTx.ExecContext(ctx, userTimestampUpdate, did, ts, ts)
 
 		eventCount += 1
-		if eventCount%2500 == 0 {
+		if eventCount%100_000 == 0 {
 			if err = dbTx.Commit(); err != nil {
 				log.Printf("commit failed: %v\n", err)
 			} else {
 				log.Printf("commit successful\n")
 			}
 
-			if eventCount%25_000 == 0 {
-				var results CheckpointResults
-				err = dbCnx.QueryRowContext(ctx, "PRAGMA wal_checkpoint(RESTART)").Scan(&results.Blocked, &results.Pages, &results.Transferred)
-				switch {
-				case err != nil:
-					log.Printf("failed checkpoint: %v\n", err)
-				case results.Blocked == 1:
-					log.Printf("checkpoint: blocked\n")
-				case results.Pages == results.Transferred:
-					log.Printf("checkpoint: %d pages transferred\n", results.Transferred)
-				case results.Pages != results.Transferred:
-					log.Printf("checkpoint: %d pages, %d transferred\n", results.Pages, results.Transferred)
-				}
+			var results CheckpointResults
+			err = dbCnx.QueryRowContext(ctx, "PRAGMA wal_checkpoint(RESTART)").Scan(&results.Blocked, &results.Pages, &results.Transferred)
+			switch {
+			case err != nil:
+				log.Printf("failed checkpoint: %v\n", err)
+			case results.Blocked == 1:
+				log.Printf("checkpoint: blocked\n")
+			case results.Pages == results.Transferred:
+				log.Printf("checkpoint: %d pages transferred\n", results.Transferred)
+			case results.Pages != results.Transferred:
+				log.Printf("checkpoint: %d pages, %d transferred\n", results.Pages, results.Transferred)
 			}
 
 			dbTx, err = dbCnx.BeginTx(ctx, nil)
