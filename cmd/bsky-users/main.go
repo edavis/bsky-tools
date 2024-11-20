@@ -215,7 +215,11 @@ func main() {
 				stop()
 				break
 			}
+
 			queue.Enqueue(event)
+			if queue.Size() < 50 {
+				log.Printf("[startup] added event")
+			}
 		}
 	}()
 
