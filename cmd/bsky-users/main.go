@@ -99,7 +99,14 @@ func handler(ctx context.Context, queue *Queue, dbCnx *sql.DB) {
 		eventCount int
 	)
 
+queueLoop:
 	for {
+		select {
+		case <-ctx.Done():
+			break queueLoop
+		default:
+		}
+
 		event, ok := queue.Dequeue()
 		if !ok {
 			time.Sleep(100 * time.Millisecond)
