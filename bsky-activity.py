@@ -10,7 +10,7 @@ import sys
 import redis
 import websockets
 
-app_bsky_allowlist = set([
+app_bsky_allowlist = (
     'app.bsky.actor.profile',
     'app.bsky.feed.generator',
     'app.bsky.feed.like',
@@ -26,13 +26,17 @@ app_bsky_allowlist = set([
     'app.bsky.graph.starterpack',
     'app.bsky.labeler.service',
     'chat.bsky.actor.declaration',
-])
+)
 
-other_allowlist = set([
-    'social.psky.feed.post',
-    'social.psky.chat.message',
-    'blue.zio.atfile.upload',
-])
+other_allowlist = (
+    'social.psky',
+    'blue.zio.atfile',
+    'com.shinolabs.pinksea',
+    'com.whtwnd',
+    'events.smokesignal',
+    'fyi.unravel',
+    'xyz.statusphere',
+)
 
 async def bsky_activity():
     relay_url = 'wss://jetstream1.us-west.bsky.network/subscribe'
@@ -64,8 +68,12 @@ async def main():
             continue
 
         collection = payload['collection']
-        if collection not in app_bsky_allowlist | other_allowlist:
+        if not collection.startswith(app_bsky_allowlist + other_allowlist):
             continue
+
+        for prefix in other_allowlist:
+            if collection.startswith(prefix):
+                redis_pipe.incr('dev.edavis.atproto.collection.' + prefix.replace('.', '_'))
 
         repo_did = event['did']
         repo_update_time = datetime.now(timezone.utc)
