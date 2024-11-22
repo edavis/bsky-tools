@@ -75,9 +75,6 @@ async def main():
             if collection.startswith(prefix):
                 redis_pipe.incr('dev.edavis.atproto.collection.' + prefix.replace('.', '_'))
 
-        repo_did = event['did']
-        repo_update_time = datetime.now(timezone.utc)
-
         if collection == 'app.bsky.feed.post':
             embed = payload['record'].get('embed')
             if embed is not None and embed.get('$type', ''):
@@ -90,10 +87,8 @@ async def main():
 
         op_count += 1
         if op_count % 500 == 0:
-            current_time_ms = datetime.now(timezone.utc).timestamp()
             event_time_ms = event['time_us'] / 1_000_000
-            current_lag = current_time_ms - event_time_ms
-            sys.stdout.write(f'lag: {current_lag:.2f}\n')
+            sys.stdout.write(f'timestamp: {event_time_ms}\n')
             redis_pipe.execute()
             sys.stdout.flush()
 
