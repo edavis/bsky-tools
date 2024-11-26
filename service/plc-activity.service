@@ -4,9 +4,9 @@ After=network.target syslog.target
 
 [Service]
 Type=simple
-User=eric
-WorkingDirectory=/home/eric/bsky-tools
-ExecStart=/home/eric/bsky-tools/bin/plc-activity
+User=ubuntu
+WorkingDirectory=/home/ubuntu/bsky-tools
+ExecStart=/home/ubuntu/bsky-tools/bin/plc-activity
 TimeoutSec=15
 Restart=always
 RestartSec=5
