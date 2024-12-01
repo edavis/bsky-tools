@@ -1,15 +1,15 @@
 [Unit]
-Description=Bsky Activity
+Description=bsky activity
 After=network.target syslog.target
 
 [Service]
 Type=simple
-User=eric
-WorkingDirectory=/home/eric/bsky-tools
-ExecStart=/home/eric/.local/bin/pipenv run ./bsky-activity.py
+User=ubuntu
+WorkingDirectory=/home/ubuntu/bsky-tools
+ExecStart=/home/ubuntu/bsky-tools/bin/bsky-activity
 TimeoutSec=15
-Restart=on-failure
-RestartSec=1
+Restart=always
+RestartSec=30
 StandardOutput=journal
 
 [Install]
