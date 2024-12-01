@@ -94,7 +94,7 @@ eventLoop:
 		// if collection starts with one of the Atproto allowlist keys, incr
 		for k, _ := range AtprotoAllowlist {
 			if strings.HasPrefix(collection, k) {
-				ckey := strings.ReplaceAll(collection, ".", "_")
+				ckey := strings.ReplaceAll(k, ".", "_")
 				if err := pipe.Incr(ctx, "dev.edavis.atproto.collection."+ckey); err != nil {
 					log.Printf("failed incrementing an atproto collection: %v\n", err)
 				}
