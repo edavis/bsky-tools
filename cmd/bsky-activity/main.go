@@ -141,7 +141,7 @@ eventLoop:
 
 		// add one to the count, every 500 ops execute the piepline
 		eventCount += 1
-		if eventCount%500 == 0 {
+		if eventCount%2500 == 0 {
 			if _, err := pipe.Exec(ctx); err != nil {
 				log.Printf("failed to exec pipe\n")
 			}
