@@ -7,13 +7,55 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
+	"time"
 
 	appbsky "github.com/bluesky-social/indigo/api/bsky"
 	jetstream "github.com/bluesky-social/jetstream/pkg/models"
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
 )
+
+type Queue struct {
+	lk     sync.Mutex
+	events []jetstream.Event
+}
+
+func NewQueue(capacity int) *Queue {
+	return &Queue{
+		events: make([]jetstream.Event, 0, capacity),
+	}
+}
+
+func (q *Queue) Enqueue(event jetstream.Event) {
+	q.lk.Lock()
+	defer q.lk.Unlock()
+
+	q.events = append(q.events, event)
+}
+
+func (q *Queue) Dequeue() (jetstream.Event, bool) {
+	q.lk.Lock()
+	defer q.lk.Unlock()
+
+	var event jetstream.Event
+
+	if len(q.events) == 0 {
+		return event, false
+	}
+
+	event = q.events[0]
+	q.events = q.events[1:]
+	return event, true
+}
+
+func (q *Queue) Size() int {
+	q.lk.Lock()
+	defer q.lk.Unlock()
+
+	return len(q.events)
+}
 
 const JetstreamUrl = `wss://jetstream1.us-west.bsky.network/subscribe`
 
@@ -59,7 +101,7 @@ func trackedRecordType(collection string) bool {
 	return false
 }
 
-func handler(ctx context.Context, events <-chan jetstream.Event) {
+func handler(ctx context.Context, queue *Queue) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "",
@@ -69,11 +111,17 @@ func handler(ctx context.Context, events <-chan jetstream.Event) {
 	var eventCount int
 
 eventLoop:
-	for event := range events {
+	for {
 		select {
 		case <-ctx.Done():
 			break eventLoop
 		default:
+		}
+
+		event, ok := queue.Dequeue()
+		if !ok {
+			time.Sleep(100 * time.Millisecond)
+			continue
 		}
 
 		if event.Kind != jetstream.EventKindCommit {
@@ -145,6 +193,7 @@ eventLoop:
 			if _, err := pipe.Exec(ctx); err != nil {
 				log.Printf("failed to exec pipe\n")
 			}
+			log.Printf("queue size: %d\n", queue.Size())
 		}
 	}
 }
@@ -164,22 +213,20 @@ func main() {
 		log.Printf("websocket closed\n")
 	}()
 
-	jetstreamEvents := make(chan jetstream.Event)
-	go handler(ctx, jetstreamEvents)
+	queue := NewQueue(100_000)
+	go handler(ctx, queue)
 
 	log.Printf("starting up\n")
-	var event jetstream.Event
 	go func() {
 		for {
-			event = jetstream.Event{}
+			var event jetstream.Event
 			err := conn.ReadJSON(&event)
 			if err != nil {
 				log.Printf("ReadJSON error: %v\n", err)
 				stop()
 				break
-			} else {
-				jetstreamEvents <- event
 			}
+			queue.Enqueue(event)
 		}
 	}()
 
